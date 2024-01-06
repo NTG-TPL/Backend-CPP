@@ -1,0 +1,11 @@
+[settings]
+arch=x86_64
+os=Linux
+compiler=gcc
+compiler.version=11
+compiler.cppstd=20
+compiler.libcxx=libstdc++11
+build_type=Debug
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
+tools.build:compiler_executables={"c":"/usr/bin/cc","cpp":"/usr/bin/c++"}
