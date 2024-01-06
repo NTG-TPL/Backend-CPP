@@ -1,9 +1,0 @@
-{
-    "version": 4,
-    "vendor": {
-        "conan": {}
-    },
-    "include": [
-        "/home/ntg/github_projects/Backend-CPP/sprint1/problems/sync_server/solution/build/CMakePresets.json"
-    ]
-}
