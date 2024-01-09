@@ -74,7 +74,7 @@ StringResponse HandleRequest(StringRequest&& req) {
       return MakeStringResponse(status, text, req.version(), req.keep_alive());
     };
     if(req.method() == http::verb::get){
-        return text_response(http::status::ok, "<strong>Hello, "s + std::string(req.target().begin() + 1, req.target().end()) + "</strong>"s);
+        return text_response(http::status::ok, "Hello, "s + std::string(req.target().begin() + 1, req.target().end()));
     }else if(req.method() == http::verb::head){
         return text_response(http::status::ok, ""s);
     }
