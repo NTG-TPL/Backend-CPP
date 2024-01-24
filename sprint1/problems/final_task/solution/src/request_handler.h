@@ -3,6 +3,7 @@
 
 #include <boost/json.hpp>
 #include <string_view>
+#include <filesystem>
 
 #include "http_server.h"
 #include "model.h"
@@ -12,6 +13,7 @@ namespace http_handler {
     namespace beast = boost::beast;
     namespace http = beast::http;
     namespace json = boost::json;
+    namespace fs = std::filesystem;
     using namespace std::literals;
 
     using StringResponse = http::response<http::string_body>;
@@ -28,13 +30,14 @@ namespace http_handler {
             constexpr static std::string_view TEXT_HTML = "text/html"sv;
             constexpr static std::string_view APPLICATION_JSON = "application/json"sv;
         };
+
+        struct EndPoint {
+            EndPoint() = delete;
+            constexpr const static std::string_view MAPS = "/api/v1/maps";
+            constexpr const static std::string_view MAP = "/api/v1/maps/";
+        };
     }  // namespace
-
-    struct EndPoint {
-        constexpr const static std::string_view maps = "/api/v1/maps";
-        constexpr const static std::string_view map = "/api/v1/maps/";
-    };
-
+    
     StringResponse MakeStringResponse(http::status status, std::string_view body, unsigned http_version,
                                       bool keep_alive, std::string_view content_type = ContentType::TEXT_HTML);
 
@@ -56,16 +59,16 @@ namespace http_handler {
                 return;
             }
 
-            std::string target(req.target());
-            if (!target.starts_with(EndPoint::maps)) {
+            const std::string_view  target = req.target();
+            if (!target.starts_with(EndPoint::MAPS)) {
                 text_response(http::status::bad_request, ErrorResponse::BAD_REQ);
                 return;
             }
 
-            if (target == EndPoint::maps) {
+            if (target == EndPoint::MAPS) {
                 json::array arr;
-                for (auto i : game_.GetMaps()) {
-                    json::value v = {{"id", *i.GetId()}, {"name", i.GetName()}};
+                for (const auto& map : game_.GetMaps()) {
+                    json::value v = {{"id", *map.GetId()}, {"name", map.GetName()}};
                     arr.push_back(v);
                 }
                 json::value v = arr;
@@ -73,11 +76,11 @@ namespace http_handler {
                 return;
             }
 
-            if (target.starts_with(EndPoint::map)) {
-                std::string s = target.substr(EndPoint::map.size());
-                auto m = game_.FindMap(model::Map::Id(s));
-                if (m) {
-                    json::value v = json::value_from(*m);
+            if (target.starts_with(EndPoint::MAP)) {
+                std::string id = std::string{target.substr(EndPoint::MAP.size())};
+                auto map = game_.FindMap(model::Map::Id(id));
+                if (map) {
+                    json::value v = json::value_from(*map);
                     text_response(http::status::ok, json::serialize(v));
                     return;
                 } else {
