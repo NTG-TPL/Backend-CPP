@@ -9,7 +9,7 @@ namespace http_handler {
 
     class RequestHandler {
     public:
-        RequestHandler(model::Game& game, fs::path path) : game_{game}, root_path_(std::filesystem::absolute(std::move(path))) {
+        RequestHandler(model::Game& game, fs::path path) : game_{game}, root_path_(std::move(path)) {
             if (!std::filesystem::exists(root_path_)) {
                 throw std::logic_error("path to static files not exist");
             }
