@@ -12,7 +12,7 @@ RUN apt update && \
 # Собираем либы через conan
 COPY conanfile.txt /app/
 RUN mkdir /app/build && cd /app/build && \
-    conan install .. --build=missing -s build_type=Debug -s compiler.libcxx=libstdc++11
+    conan install .. --build=missing -s build_type=Release -s compiler.libcxx=libstdc++11
 
 # Переносим в docker контейнер исходники
 COPY ./src /app/src
@@ -20,7 +20,7 @@ COPY CMakeLists.txt /app/
 
 # Сборка проекта
 RUN cd /app/build && \
-    cmake -DCMAKE_BUILD_TYPE=Debug .. && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
     cmake --build .
     
 # Создаём контейнер run
