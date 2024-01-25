@@ -12,15 +12,16 @@ RUN apt update && \
 # Собираем либы через conan
 COPY conanfile.txt /app/
 RUN mkdir /app/build && cd /app/build && \
-    conan install .. --build=missing -s build_type=Debug -s compiler.libcxx=libstdc++11
+    conan install .. --build=missing -s build_type=Release -s compiler.libcxx=libstdc++11
 
 # Переносим в docker контейнер исходники
 COPY ./src /app/src
 COPY CMakeLists.txt /app/
 
+
 # Сборка проекта
 RUN cd /app/build && \
-    cmake -DCMAKE_BUILD_TYPE=Debug .. && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
     cmake --build .
     
 # Создаём контейнер run
@@ -31,8 +32,9 @@ RUN groupadd -r www && useradd -r -g www www
 USER www
 
 # Скопируем приложение со сборочного контейнера в директорию /app.
-COPY --from=build /app/build/game_server /app/
+COPY --from=build /app/build/bin/game_server /app/
 COPY ./data /app/data
+COPY ./static /app/static
 
 # Запускаем игровой сервер (точка входа /app/game_server с параметром /app/data/config.json)
-ENTRYPOINT ["/app/game_server", "/app/data/config.json"]
+ENTRYPOINT ["/app/game_server", "/app/data/config.json", "/app/static"]
