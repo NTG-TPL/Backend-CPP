@@ -31,8 +31,8 @@ namespace logs {
 
     void Logger::Init() {
         boost::log::add_common_attributes();
-        boost::log::add_console_log(
-                std::clog,
-                boost::log::keywords::format = &LogFormatter);
+        logging::add_console_log(std::cout,
+                                 logging::keywords::format = &LogFormatter,
+                                 logging::keywords::auto_flush = true);
     }
 }
