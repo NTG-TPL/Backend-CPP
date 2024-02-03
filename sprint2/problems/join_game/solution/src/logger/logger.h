@@ -30,11 +30,8 @@ namespace server_logging {
     class Logger {
     public:
         static void Init();
-
         static void LogExit(int code);
-
         static void LogExit(const std::exception& ex);
-
         static void LogError(const boost::system::error_code& ec, std::string_view where);
 
         Logger() = default;
@@ -45,6 +42,29 @@ namespace server_logging {
 
     template <class RequestHandler>
     class LoggingRequestHandler {
+    public:
+        explicit LoggingRequestHandler(RequestHandler& handler) : decorated_(handler) {}
+
+        template <typename Body, typename Allocator, typename Send>
+        void operator()(const boost::asio::ip::tcp::endpoint& endpoint, http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
+            LogRequest(endpoint, req);
+            decorated_(endpoint, std::move(req), [s = std::forward<Send>(send)](auto&& response) {
+                std::chrono::high_resolution_clock timer;
+                auto start = std::chrono::high_resolution_clock::now();
+
+                const int code_result = response.result_int();
+                const std::string content_type = static_cast<std::string>(response.at(http::field::content_type));
+
+                s(response);
+
+                auto stop = std::chrono::high_resolution_clock::now();
+                auto response_time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+
+                LoggingRequestHandler::LogResponse(response_time, code_result, content_type);
+            });
+        }
+
+    private:
         template <typename Body, typename Allocator>
         static void LogRequest(const boost::asio::ip::tcp::endpoint &endpoint , const http::request<Body, http::basic_fields<Allocator>>& req) {
             /** message — строка request received
@@ -71,30 +91,6 @@ namespace server_logging {
                                  {"content_type",  (content.empty() ? "null" : content)}};
             BOOST_LOG_TRIVIAL(info) << boost::log::add_value(additional_data, value) << "response sent"sv;
         }
-
-    public:
-        explicit LoggingRequestHandler(RequestHandler& h) : decorated_(h) {}
-
-        template <typename Body, typename Allocator, typename Send>
-        void operator()(const boost::asio::ip::tcp::endpoint& endpoint, http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
-
-            LogRequest(endpoint, req);
-            decorated_(endpoint, std::move(req), [s = std::forward<Send>(send)](auto&& response) {
-                std::chrono::high_resolution_clock timer;
-                auto start = std::chrono::high_resolution_clock::now();
-
-                const int code_result = response.result_int();
-                const std::string content_type = static_cast<std::string>(response.at(http::field::content_type));
-
-                s(response);
-
-                auto stop = std::chrono::high_resolution_clock::now();
-                auto response_time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-                LoggingRequestHandler::LogResponse(response_time, code_result, content_type);
-            });
-        }
-
     private:
         RequestHandler& decorated_;
     };

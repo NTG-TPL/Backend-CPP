@@ -1,13 +1,13 @@
 #include "sdk.h"
-//
+
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <iostream>
 #include <thread>
 
-#include "json_loader.h"
-#include "request_handler.h"
-#include "logger.h"
+#include "json/json_loader.h"
+#include "request_handler/request_handler.h"
+#include "logger/logger.h"
 
 using namespace std::literals;
 namespace net = boost::asio;
@@ -47,11 +47,15 @@ int main(int argc, const char* argv[]) {
 
     try {
         // 1. Загружаем карту из файла и построить модель игры
-        model::Game game = json_loader::LoadGame(argv[1]);
+        fs::path config_file = argv[1];
+        fs::path static_files_root = argv[2];
+        app::Application application(config_file);
 
         // 2. Инициализируем io_context
         const unsigned num_threads = std::thread::hardware_concurrency();
         net::io_context ioc(num_threads);
+        // strand для выполнения запросов к API
+        auto api_strand = net::make_strand(ioc);
 
         // 3. Добавляем асинхронный обработчик сигналов SIGINT и SIGTERM
         net::signal_set signals(ioc, SIGINT, SIGTERM);
@@ -61,10 +65,12 @@ int main(int argc, const char* argv[]) {
           }
         });
 
-        // 4. Создаём обработчик HTTP-запросов и связываем его с моделью игры
-        http_handler::RequestHandler handler{game, argv[2]};
-        // 4.1 Используйте паттерн 'Декоратор', чтобы залогировать получение запросов и формирование ответов
-        server_logging::LoggingRequestHandler<http_handler::RequestHandler> logging_handler{handler};
+        // 4. Создаём обработчик HTTP-запросов и связываем его с приложением
+        auto handler = std::make_shared<http_handler::RequestHandler>(
+                static_files_root, api_strand, application);
+        // 4.1 Использование паттерна 'Декоратор', чтобы залогировать получение запросов и формирование ответов
+        server_logging::LoggingRequestHandler logging_handler{(*handler)};
+
 
         // 5. Запустить обработчик HTTP-запросов, делегируя их обработчику запросов
         const auto address = net::ip::make_address("0.0.0.0");
