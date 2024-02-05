@@ -4,6 +4,9 @@
 
 namespace http_handler {
     using namespace std::string_view_literals;
+    /**
+     * Структура-хранилка для кодов ошибок
+     */
     struct ErrorResponse {
         ErrorResponse() = delete;
         constexpr static std::string_view MAP_NOT_FOUND  = R"({"code": "mapNotFound", "message": "Map not found"})"sv;

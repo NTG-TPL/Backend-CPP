@@ -4,9 +4,10 @@
 #include <unordered_map>
 #include <vector>
 #include <stdexcept>
-#include <queue>
 #include <memory>
 #include <optional>
+#include <map>
+#include <iostream>
 
 
 #include "../util/tagged.h"
@@ -135,47 +136,48 @@ public:
     using DogIdHasher = util::TaggedHasher<Dog::Id>;
     using Dogs = std::unordered_map<Dog::Id, Dog, DogIdHasher>;
 
-    explicit GameSession(const Map& map): map_(std::make_shared<const Map>(map)), limit_(100) {}
-    GameSession(const Map& map, size_t limit): map_(std::make_shared<const Map>(map)), limit_(limit) {}
+    explicit GameSession(const Map& map): map_(map), limit_(100) {}
+    GameSession(const Map& map, size_t limit): map_(map), limit_(limit) {}
     const Map::Id& GetMapId() const noexcept;
 
     size_t GetActivityPlayers() const noexcept;
     size_t GetLimitPlayers() const noexcept;
+    size_t AmountAvailableSeats() const noexcept;
     bool IsFull() const noexcept;
     // Добавляет собаку в сессию (если id собаки не уникален, или сессия переполнена, то возвращает false)
     Dog * AddDog(const Dog& dog);
     size_t EraseDog(const Dog::Id& id);
     [[nodiscard]] const Dogs& GetDogs() const noexcept;
 private:
-    std::shared_ptr<const Map> map_;
+    const Map& map_;
     size_t limit_;
     Dogs dogs_;
 };
 
-bool operator< (const GameSession& lhs, const GameSession& rhs);
+bool operator < (const GameSession& lhs, const GameSession& rhs);
 
 class Game {
 public:
     using Maps = std::vector<Map>;
-    using Sessions = std::priority_queue<GameSession>;
+    using Sessions = std::vector<std::shared_ptr<GameSession>>;
+    using FullnessToSessionIndex = std::map<size_t, size_t, std::greater<>>;
 
     void AddMap(const Map& map);
     const Maps& GetMaps() const noexcept;
     const Map* FindMap(const Map::Id& id) const noexcept;
-    const GameSession& AddSession(GameSession session);
-    std::pair<Dog*, const GameSession&> CreateSession(const Map::Id& map_id, const Dog& dog);
-    std::optional<GameSession> ExtractFreeSession(const Map::Id& map_id);
+    std::shared_ptr<GameSession> UpdateSessionFullness(size_t index, const GameSession& session);
+    std::shared_ptr<GameSession> CreateSession(const Map::Id& map_id, const Dog& dog);
+    std::optional<std::pair<size_t, std::shared_ptr<GameSession>>> ExtractFreeSession(const Map::Id& map_id);
 
-private:
-    static void CheckMap(const Map* map, const Map::Id& map_id);
 private:
     using MapIdHasher = util::TaggedHasher<Map::Id>;
     using MapIdToIndex = std::unordered_map<Map::Id, size_t, MapIdHasher>;
-    using MapIdToSessions = std::unordered_map<Map::Id, Sessions, MapIdHasher>;
+    using MapIdToSessionIndex = std::unordered_map<Map::Id, FullnessToSessionIndex, MapIdHasher>;
 
     Maps maps_;
     MapIdToIndex id_to_map_index_;
-    MapIdToSessions map_to_sessions_;
+    Sessions sessions_;
+    MapIdToSessionIndex map_to_sessions_;
 };
 
 }  // namespace model

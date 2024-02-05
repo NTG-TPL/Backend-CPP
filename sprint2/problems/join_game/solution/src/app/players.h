@@ -17,26 +17,27 @@ namespace app {
     public:
         using Id = util::Tagged<size_t, Player>;
 
-        Player(const model::Dog& dog, const model::GameSession& session): dog_(dog), session_(session) {}
+        Player(const model::Dog& dog, std::shared_ptr<model::GameSession> session):
+            dog_(dog), session_(session) {}
         [[nodiscard]] const model::GameSession& GetSession() const noexcept;
         [[nodiscard]] const model::Dog& GetDog() const noexcept;
         [[nodiscard]] Id GetId() const noexcept;
 
     private:
-        const model::GameSession& session_;
+        std::shared_ptr<model::GameSession> session_;
         const model::Dog& dog_;
     };
 
     class PlayerTokens {
     public:
         const Player* FindPlayer(const Token& token) const noexcept;
-        Token AddPlayer(Player* player);
+        Token AddPlayer(Player& player);
         static inline constexpr uint8_t GetTokenLenght() noexcept{ return 32; }
     private:
         Token GetToken();
     private:
         using TokenHasher = util::TaggedHasher<Token>;
-        using TokenToPlayer = std::unordered_map<Token, Player*, TokenHasher>;
+        using TokenToPlayer = std::unordered_map<Token, Player&, TokenHasher>;
 
         std::random_device random_device_;
         std::mt19937_64 generator1_{[this] {
@@ -55,7 +56,7 @@ namespace app {
     public:
         using PlayerList = std::deque<Player>;
 
-        std::pair<Token, Player&> AddPlayer(const model::Dog& dog, const model::GameSession& session);
+        std::pair<Token, Player&> AddPlayer(const model::Dog& dog, const std::shared_ptr<model::GameSession>& session);
         const Player* FindByDogIdAndMapId(const model::Dog::Id& dog_id, const model::Map::Id& map_id) const;
         const Player* FindByToken(const Token& token);
 

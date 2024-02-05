@@ -5,6 +5,9 @@
 namespace http_handler {
     using namespace std::string_view_literals;
     struct EndPoint {
+        /**
+         * Структура-хранилка для эндпоинтов
+         */
         EndPoint() = delete;
         constexpr const static std::string_view API = "/api/"sv;
         constexpr const static std::string_view MAPS = "/api/v1/maps"sv;

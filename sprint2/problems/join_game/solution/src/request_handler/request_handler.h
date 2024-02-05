@@ -29,7 +29,7 @@ namespace http_handler {
             if(ApiHandler::IsAPIRequest(req)){
                 auto handle = [self = shared_from_this(), send, handler = std::make_shared<ApiHandler>(app_), req] {
                         // Этот assert не выстрелит, так как лямбда-функция будет выполняться внутри strand
-//                        assert(self->api_strand_.running_in_this_thread());
+                        assert(self->api_strand_.running_in_this_thread());
                         send(std::move(handler->HandleApiRequest(req)));
                 };
                 return net::dispatch(api_strand_, handle);

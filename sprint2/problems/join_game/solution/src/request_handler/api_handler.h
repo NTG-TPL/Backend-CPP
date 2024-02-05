@@ -49,7 +49,7 @@ namespace http_handler {
     private:
         StringResponse RequestForListPlayers(const StringRequest& req);
         static std::optional<app::Token> TryExtractToken(const StringRequest& req);
-        StringResponse ExecuteAuthorized(const StringRequest& req, const std::function<StringResponse(const app::Player& player)>& action);
+        StringResponse Authorize(const StringRequest& req, const std::function<StringResponse(const app::Player& player)>& action);
         StringResponse RequestToJoin(const StringRequest& req);
         StringResponse RequestToMaps(const StringRequest& req, std::string & decoded_target);
     private:

@@ -10,7 +10,7 @@ namespace app {
     namespace fs = std::filesystem;
     class Application {
     public:
-        Application(const fs::path& config);
+        explicit Application(const fs::path& config);
 
         Application() = delete;
         Application(const Application&) = delete;
@@ -22,7 +22,7 @@ namespace app {
         const model::Map* FindMap(const model::Map::Id& id) const noexcept;
         const model::Game::Maps& GetMaps() const noexcept;
         std::pair<Token, Player&> JoinGame(const model::Map::Id& id, const std::string &user_name);
-        const Player* FindPlayer(const Token &t);
+        const Player* FindPlayer(const Token &token);
         const Players& GetPlayers() const noexcept;
 
     private:

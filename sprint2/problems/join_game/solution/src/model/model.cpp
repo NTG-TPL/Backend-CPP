@@ -3,66 +3,129 @@
 namespace model {
 using namespace std::literals;
 
+/**
+ * Проверка на горизонтальный маршрут
+ * @return если маршрут горизонтальный, то возвращает true, иначе - false.
+ */
 bool Road::IsHorizontal() const noexcept {
     return start_.y == end_.y;
 }
 
+/**
+ * Проверка на вертикальный маршрут
+ * @return если маршрут вертикальный, то возвращает true, иначе - false.
+ */
 bool Road::IsVertical() const noexcept {
     return start_.x == end_.x;
 }
 
+/**
+ * Получить начальную точку маршрута
+ * @return Point start;
+ */
 Point Road::GetStart() const noexcept {
     return start_;
 }
 
+/**
+ * Получить конечную точку маршрута
+ * @return Point end;
+ */
 Point Road::GetEnd() const noexcept {
     return end_;
 }
 
+/**
+ * Получить границы Building
+ * @return Rectangle
+ */
 const Rectangle&  Building::GetBounds() const noexcept {
     return bounds_;
 }
 
+/**
+ * Получить индекс Office
+ * @return индекс
+ */
 const Office::Id& Office::GetId() const noexcept {
     return id_;
 }
 
+/**
+ * Получить позицию объекта Office
+ * @return позиция
+ */
 Point Office::GetPosition() const noexcept {
     return position_;
 }
 
+/**
+ * Получить смещение объекта Office
+ * @return смещение
+ */
 Offset Office::GetOffset() const noexcept {
     return offset_;
 }
 
+/**
+ * Получить индекс карты
+ * @return индекс карты
+ */
 const Map::Id& Map::GetId() const noexcept {
     return id_;
 }
 
+/**
+ * Получить название карты
+ * @return Название карты
+ */
 const std::string& Map::GetName() const noexcept {
     return name_;
 }
-
+/**
+ * Получить контейнер, содеражайщий здания на карте
+ * @return Контейнер, содеражайщий здания
+ */
 const Map::Buildings& Map::GetBuildings() const noexcept {
     return buildings_;
 }
 
+/**
+ * Получить контейнер, содеражайщий маршруты на карте
+ * @return Контейнер, содеражайщий маршруты
+ */
 const Map::Roads& Map::GetRoads() const noexcept {
     return roads_;
 }
 
+/**
+ * Получить контейнер, содеражайщий офисы на карте
+ * @return Контейнер, содеражайщий офисы
+ */
 const Map::Offices& Map::GetOffices() const noexcept {
     return offices_;
 }
 
+/**
+ * Добавить маршрут
+ * @param road Ссылка на маршрут
+ */
 void Map::AddRoad(const Road& road) {
     roads_.emplace_back(road);
 }
 
+/**
+ * Добавить здание
+ * @param building Ссылка на здание
+ */
 void Map::AddBuilding(const Building& building) {
     buildings_.emplace_back(building);
 }
 
+/**
+ * Добавить оффис
+ * @param office Ссылка на офис
+ */
 void Map::AddOffice(const Office& office) {
     if (warehouse_id_to_index_.contains(office.GetId())) {
         throw std::invalid_argument("Duplicate warehouse");
@@ -79,31 +142,67 @@ void Map::AddOffice(const Office& office) {
     }
 }
 
+/**
+ * Получить индекс собаки
+ * @return Индекс собаки
+ */
 Dog::Id Dog::GetId() const noexcept {
     return id_;
 }
 
+/**
+ * Получить имя собаки
+ * @return Имя собаки
+ */
 const std::string& Dog::GetName() const noexcept{
     return name_;
 }
 
+/**
+ * Получить индекс карты
+ * @return индекс карты
+ */
 const Map::Id& GameSession::GetMapId() const noexcept {
-    return map_->GetId();
+    return map_.GetId();
 }
 
+/**
+ * Получить количество занятых мест
+ * @return Количество занятых мест
+ */
 size_t GameSession::GetActivityPlayers() const noexcept{
     return dogs_.size();
 }
 
+/**
+ * Получить ограничение количества мест в сесии
+ * @return Количество мест сесии
+ */
 size_t GameSession::GetLimitPlayers() const noexcept{
     return limit_;
 }
 
-bool GameSession::IsFull() const noexcept{
-    return (limit_ - dogs_.size()) == 0;
+/**
+ * Получить количество свободных мест в сесии
+ * @return Количество свободных мест
+ */
+size_t GameSession::AmountAvailableSeats() const noexcept{
+    return (limit_ - dogs_.size());
 }
 
-// Добавляет собаку в сессию (если id собаки не уникален, или сессия переполнена, то возвращает false)
+/**
+ * Проверяет заполненность сессии.
+ * @return Возвращает true, если сессия переполнена, иначе - false.
+ */
+bool GameSession::IsFull() const noexcept{
+    return (AmountAvailableSeats() == 0);
+}
+
+/**
+ * Добавляет собаку в сессию (если id собаки не уникален, или сессия переполнена, то возвращает false)
+ * @param dog ссылка на собаку
+ * @return сырой указатель на собаку
+ */
 Dog * GameSession::AddDog(const Dog& dog) {
     if(dogs_.size() < limit_ && !dogs_.contains(dog.GetId())){
         return &(dogs_.emplace(dog.GetId(), dog).first)->second;
@@ -111,14 +210,27 @@ Dog * GameSession::AddDog(const Dog& dog) {
     return nullptr;
 }
 
+/**
+ * Удаляет собаку из сессии
+ * @param id индекс собаки
+ * @return количество удалённых объектов
+ */
 size_t GameSession::EraseDog(const Dog::Id& id){
     return dogs_.erase(id);
 }
 
+/**
+ * Получить контейнер, содержащий собак
+ * @return GameSession::Dogs
+ */
 const GameSession::Dogs& GameSession::GetDogs() const noexcept{
     return dogs_;
 }
 
+/**
+ * Добавляет карту
+ * @param map ссылка на карту
+ */
 void Game::AddMap(const Map& map) {
     const size_t index = maps_.size();
     if (auto [it, inserted] = id_to_map_index_.emplace(map.GetId(), index); !inserted) {
@@ -133,10 +245,19 @@ void Game::AddMap(const Map& map) {
     }
 }
 
+/**
+ * Получить контейнер, содержащий карты
+ * @return Game::Maps
+ */
 const Game::Maps& Game::GetMaps() const noexcept {
     return maps_;
 }
 
+/**
+ * Находит карту
+ * @param id индекс карты
+ * @return сырой указатель на карут, если она есть, иначе - nullptr.
+ */
 const Map* Game::FindMap(const Map::Id& id) const noexcept {
     if (auto it = id_to_map_index_.find(id); it != id_to_map_index_.end()) {
         return &maps_.at(it->second);
@@ -144,41 +265,52 @@ const Map* Game::FindMap(const Map::Id& id) const noexcept {
     return nullptr;
 }
 
-const GameSession& Game::AddSession(GameSession session) {
-    auto map = FindMap(session.GetMapId());
-    CheckMap(map, session.GetMapId());
-    auto& sessions = map_to_sessions_.at(session.GetMapId());
-    sessions.push(std::move(session));
-    return sessions.top();
+/**
+ * Обновляет словарь заполненности сессий 'map_to_sessions_'
+ * @param index индекс сессии
+ * @param session сессия
+ * @return Указатель на сессию.
+ */
+std::shared_ptr<GameSession> Game::UpdateSessionFullness(size_t index, const GameSession& session) {
+    map_to_sessions_.at(session.GetMapId()).emplace(session.AmountAvailableSeats(), index);
+    return sessions_.at(index);
 }
 
-std::pair<Dog*, const GameSession&> Game::CreateSession(const Map::Id& map_id, const Dog& dog){
+/**
+ *
+ * @param map_id индекс карты {string}
+ * @param dog ссылка на собаку игрока
+ * @return Указатель на сессию.
+ */
+std::shared_ptr<GameSession> Game::CreateSession(const Map::Id& map_id, const Dog& dog){
     auto map = FindMap(map_id);
-    CheckMap(map, map_id);
-    GameSession session(*map);
-    auto dog_ = session.AddDog(dog);
-    map_to_sessions_[map_id].push(std::move(session));
-    return {dog_, map_to_sessions_.at(map_id).top()};
-}
-
-std::optional<GameSession> Game::ExtractFreeSession(const Map::Id& map_id) {
-    if (map_to_sessions_.contains(map_id) && !map_to_sessions_.at(map_id).top().IsFull()) {
-        auto& session = map_to_sessions_.at(map_id);
-        GameSession out_session = std::move(const_cast<GameSession&>(session.top()));
-        session.pop();
-        return out_session;
-    }
-    return std::nullopt;
-}
-
-void Game::CheckMap(const Map* map, const Map::Id& map_id){
     if (map == nullptr) {
         throw std::invalid_argument("Map id \""s + *map_id + "\" does not exist"s);
     }
+    auto& session = sessions_.emplace_back(std::make_shared<GameSession>(*map));
+    session->AddDog(dog);
+    map_to_sessions_[map_id].emplace(session->AmountAvailableSeats(), sessions_.size() - 1);
+    return session;
 }
 
-bool operator < (const GameSession& lhs, const GameSession& rhs){
-    return (lhs.GetLimitPlayers() - lhs.GetActivityPlayers()) > (rhs.GetLimitPlayers()- rhs.GetActivityPlayers());
+/**
+ * Извлекает сессию, если есть указатель на неё
+ * @param map_id индекс карты
+ * @return возвращает индекс сессии и указатель на неё, если таковая имеется
+ */
+std::optional<std::pair<size_t, std::shared_ptr<GameSession>>> Game::ExtractFreeSession(const Map::Id& map_id) {
+    if (map_to_sessions_.contains(map_id) &&
+        !map_to_sessions_.at(map_id).empty() &&
+        map_to_sessions_.at(map_id).begin()->first > 0) { // количество свободных мест > 0;
+        auto& sessions = map_to_sessions_.at(map_id);
+        auto index = sessions.begin()->second;
+        if(sessions_.at(index) == nullptr){ // создадим новую сессию и поменяем указатель на неё.
+            return std::pair<size_t, std::shared_ptr<GameSession>>{index, nullptr};
+        }
+        sessions.extract(sessions.begin()->first);
+        return std::pair<size_t, std::shared_ptr<GameSession>>{index, sessions_.at(index)}; // нужная сессия уже существует
+    }
+    return std::nullopt; // создадим новую сессию
 }
 
 }  // namespace model

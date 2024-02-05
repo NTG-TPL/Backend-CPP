@@ -39,28 +39,28 @@ namespace model {
     Map tag_invoke(boost::json::value_to_tag<Map>, boost::json::value const& json_value);
 
     struct MapKey {
-        constexpr const static boost::json::string_view ID = "id";
-        constexpr const static boost::json::string_view NAME = "name";
-        constexpr const static boost::json::string_view START_X = "x0";
-        constexpr const static boost::json::string_view START_Y = "y0";
-        constexpr const static boost::json::string_view END_X = "x1";
-        constexpr const static boost::json::string_view END_Y = "y1";
-        constexpr const static boost::json::string_view POS_X = "x";
-        constexpr const static boost::json::string_view POS_Y = "y";
-        constexpr const static boost::json::string_view HEIGHT = "h";
-        constexpr const static boost::json::string_view WIDTH = "w";
-        constexpr const static boost::json::string_view OFFSET_X = "offsetX";
-        constexpr const static boost::json::string_view OFFSET_Y = "offsetY";
-        constexpr const static boost::json::string_view ROADS = "roads";
-        constexpr const static boost::json::string_view BUILDINGS = "buildings";
-        constexpr const static boost::json::string_view OFFICES = "offices";
+        constexpr const static boost::json::string_view ID         = "id";
+        constexpr const static boost::json::string_view NAME       = "name";
+        constexpr const static boost::json::string_view START_X    = "x0";
+        constexpr const static boost::json::string_view START_Y    = "y0";
+        constexpr const static boost::json::string_view END_X      = "x1";
+        constexpr const static boost::json::string_view END_Y      = "y1";
+        constexpr const static boost::json::string_view POS_X      = "x";
+        constexpr const static boost::json::string_view POS_Y      = "y";
+        constexpr const static boost::json::string_view HEIGHT     = "h";
+        constexpr const static boost::json::string_view WIDTH      = "w";
+        constexpr const static boost::json::string_view OFFSET_X   = "offsetX";
+        constexpr const static boost::json::string_view OFFSET_Y   = "offsetY";
+        constexpr const static boost::json::string_view ROADS      = "roads";
+        constexpr const static boost::json::string_view BUILDINGS  = "buildings";
+        constexpr const static boost::json::string_view OFFICES    = "offices";
     };
 
     struct ApiKey {
-        constexpr const static boost::json::string_view USER_NAME = "userName";
+        constexpr const static boost::json::string_view USER_NAME  = "userName";
         constexpr const static boost::json::string_view USER_TOKEN = "authToken";
-        constexpr const static boost::json::string_view MAP_ID = "mapId";
-        constexpr const static boost::json::string_view PLAYER_ID = "playerId";
+        constexpr const static boost::json::string_view MAP_ID     = "mapId";
+        constexpr const static boost::json::string_view PLAYER_ID  = "playerId";
     };
 } // namespace model
 #endif //GAME_SERVER_TAG_INVOKE_H

@@ -65,27 +65,33 @@ namespace server_logging {
         }
 
     private:
+
+        /**
+         * Выполняет логирование запросов
+         * @param endpoint обращение к маршруту HTTP методом
+         * @param req Запрос
+         */
         template <typename Body, typename Allocator>
         static void LogRequest(const boost::asio::ip::tcp::endpoint &endpoint , const http::request<Body, http::basic_fields<Allocator>>& req) {
             /** message — строка request received
                 data    — объект с полями:
-                    ip     — IP-адрес клиента (полученный через endpoint.address().to_string()),
-                    URI    — запрошенный адрес,
-                    method — использованный метод HTTP.
-             */
+                ip      — IP-адрес клиента (полученный через endpoint.address().to_string()),
+                URI     — запрошенный адрес,
+                method  — использованный метод HTTP.
+            */
             json::value value{{"ip"s,     endpoint.address().to_string()},
                               {"URI"s,    req.target()},
                               {"method"s, req.method_string()}};
             BOOST_LOG_TRIVIAL(info) << logging::add_value(additional_data, value) << "request received"sv;
         }
 
+        /**
+         * Выполняет логирование ответов на запросы
+         * @param response_time время формирования ответа в миллисекундах (целое число).
+         * @param code статус-код ответа, например, 200 (http::response<T>::result_int()).
+         * @param content строка или null, если заголовок в ответе отсутствует.
+         */
         static void LogResponse(std::size_t response_time, int code, const std::string& content) {
-            /** message — строка response sent
-                data — объект с полями:
-                    response_time — время формирования ответа в миллисекундах (целое число).
-                    code — статус-код ответа, например, 200 (http::response<T>::result_int()).
-                    content_type — строка или null, если заголовок в ответе отсутствует.
-             */
             json::value value = {{"response_time", response_time},
                                  {"code",          code},
                                  {"content_type",  (content.empty() ? "null" : content)}};
