@@ -45,6 +45,10 @@ namespace http_handler {
             if (decoded_target == EndPoint::STATE) {
                 return !is_get_or_head_request() ? method_not_allowed(ErrorResponse::INVALID_GET, Api::GET_HEAD) : RequestToState(req);
             }
+
+            if (decoded_target == EndPoint::ACTION) {
+                return !is_post_request() ? method_not_allowed(ErrorResponse::INVALID_POST, Api::POST) : RequestToAction(req);
+            }
         }
 
         return MakeTextResponse(req, http::status::method_not_allowed, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
