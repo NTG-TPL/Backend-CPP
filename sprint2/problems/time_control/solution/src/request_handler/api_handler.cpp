@@ -51,7 +51,7 @@ namespace http_handler {
             }
         }
 
-        return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
+        return MakeTextResponse(req, http::status::method_not_allowed, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
     }
 
     /**
