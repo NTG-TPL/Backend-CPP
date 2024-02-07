@@ -59,13 +59,13 @@ namespace http_handler {
         using namespace model;
 
         return ExecuteAuthorized(req, [&req](const app::Player &player) {
-            json::object value;
+            json::object obj;
             auto dogs = player.GetSession().GetDogs();
             for (const auto &[id, dog]: dogs) {
-                value[std::to_string(*id)] = {MapKey::NAME, dog.GetName()};
+                obj[std::to_string(*id)] = {MapKey::NAME, dog.GetName()};
             }
 
-            return MakeTextResponse(req, http::status::ok, json::serialize(value), CacheControl::NO_CACHE);
+            return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
         });
     }
 
@@ -111,7 +111,8 @@ namespace http_handler {
      * @param action действие
      * @return Возвращает ответ StringResponse{http::response<http::string_body>}
      */
-    StringResponse ApiHandler::ExecuteAuthorized(const StringRequest& req, const std::function<StringResponse(const app::Player& player)>& action) {
+    StringResponse ApiHandler::ExecuteAuthorized(const StringRequest& req,
+                                                  const std::function<StringResponse(app::Player&)>& action) {
         if (auto token = ApiHandler::TryExtractToken(req); token.has_value()) {
             auto player = app_.FindPlayer(*token);
             if (player == nullptr) {
@@ -139,7 +140,7 @@ namespace http_handler {
             user_name = obj.at(UserKey::USER_NAME).as_string();
             map_id = obj.at(UserKey::MAP_ID).as_string();
         } catch (...) {
-            return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE, CacheControl::NO_CACHE);
+            return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_JOIN, CacheControl::NO_CACHE);
         }
 
         if (user_name.empty()) {
@@ -162,7 +163,7 @@ namespace http_handler {
      * @param decoded_target декодированный URI
      * @return Возвращает ответ StringResponse{http::response<http::string_body>}
      */
-    StringResponse ApiHandler::RequestToMaps(const StringRequest& req, std::string & decoded_target){
+    StringResponse ApiHandler::RequestToMaps(const StringRequest& req, std::string & decoded_target) {
         if (decoded_target == EndPoint::MAPS) {
             return MakeTextResponse(req, http::status::ok, json::serialize(json::value_from(app_.GetMaps())));
         }
@@ -183,19 +184,40 @@ namespace http_handler {
      * @param req Запрос StringRequest {http::request<http::string_body>}
      * @return Возвращает ответ StringResponse{http::response<http::string_body>}
      */
-    StringResponse ApiHandler::RequestToState(const StringRequest& req){
+    StringResponse ApiHandler::RequestToState(const StringRequest& req) {
         using namespace model;
 
         return ExecuteAuthorized(req, [&req](const app::Player &player) {
-            json::object value;
+            json::object obj;
             auto dogs = player.GetSession().GetDogs();
             json::object json_dogs;
             for (const auto &[id, dog]: dogs) {
                 json_dogs[std::to_string(*id)] = json::value_from(dog);
             }
-            value[UserKey::PLAYERS] = json_dogs;
+            obj[UserKey::PLAYERS] = json_dogs;
 
-            return MakeTextResponse(req, http::status::ok, json::serialize(value), CacheControl::NO_CACHE);
+            return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
+        });
+    }
+
+    StringResponse ApiHandler::RequestToAction(const StringRequest& req) {
+        using namespace model;
+
+        return ExecuteAuthorized(req, [&req](app::Player &player) {
+            json::object obj;
+            auto& session = player.GetSession();
+            auto& map = session.GetMap();
+            auto& dog = player.GetDog();
+
+            try{
+                json::object json_body = json::parse(req.body()).as_object();
+                dog.Move(json_body.at(UserKey::MOVE).as_string(), map.GetDogSpeed());
+            } catch (...) {
+                return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_ACTION, CacheControl::NO_CACHE );
+            }
+
+
+            return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
         });
     }
 }

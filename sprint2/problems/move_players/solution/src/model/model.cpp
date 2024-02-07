@@ -107,6 +107,14 @@ const Map::Offices& Map::GetOffices() const noexcept {
 }
 
 /**
+ * Получить скорость собак на карте
+ * @return DimensionDouble {double} - Скорость собак
+ */
+DimensionDouble Map::GetDogSpeed() const noexcept {
+    return dog_speed_;
+}
+
+/**
  * Добавить маршрут
  * @param road Ссылка на маршрут
  */
@@ -159,13 +167,13 @@ const std::string& Dog::GetName() const noexcept {
 }
 
 /**
- * Присвоить собаке позицию (попутно вычисляет скорость собаки)
- * @param position Позиция собаки
+ * двигает собаку в направлении dir со скоростью speed
+ * @param dir Направление
+ * @param speed Скорость
  */
-void Dog::SetPosition(const Point2d& position) {
-    speed_.dx = position.x - position_.x;
-    speed_.dy = position.y - position_.y;
-    position_ = position;
+void Dog::Move(std::string_view dir, DimensionDouble speed) {
+    speed_ = Direction::DIRECTION.at(dir)(speed);
+    dir_ = dir;
 }
 
 /**
@@ -180,7 +188,7 @@ const Point2d& Dog::GetPosition() const noexcept {
  * Получить скорость собаки
  * @return Скорость собаки
  */
-const Speed2d& Dog::GetSpeed() const noexcept {
+const Velocity2d& Dog::GetSpeed() const noexcept {
     return speed_;
 }
 
@@ -245,7 +253,7 @@ bool GameSession::IsFull() const noexcept {
  * @param id Индекс собаки
  * @return Сырой указатель на собаку
  */
-const Dog* GameSession::FindDog(const Dog::Id& id) const noexcept {
+Dog* GameSession::FindDog(const Dog::Id& id){
     return dogs_.contains(id) ? &dogs_.at(id) : nullptr;
 }
 
@@ -415,7 +423,7 @@ std::optional<std::pair<size_t, std::shared_ptr<GameSession>>> Game::ExtractFree
  * @return Point2i на дороге
  */
 Point2i Game::GenerateNewPosition(const model::GameSession& session, bool enable){
-    return position_generator.GeneratePosition(session, enable);
+    return DropOffGenerator::GeneratePosition(session, enable);
 }
 
 }  // namespace model
