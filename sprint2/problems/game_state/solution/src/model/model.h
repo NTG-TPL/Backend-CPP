@@ -7,31 +7,67 @@
 #include <memory>
 #include <optional>
 #include <map>
+#include <random>
 #include <iostream>
-
 
 #include "../util/tagged.h"
 
 namespace model {
+using namespace std::string_view_literals;
 
-using Dimension = int;
-using Coord = Dimension;
+using DimensionInt = int;
+using DimensionDouble = double;
+using CoordInt = DimensionInt;
+using CoordDouble = DimensionDouble;
 
+template <typename TypeNumber>
 struct Point {
-    Coord x, y;
+    TypeNumber x, y;
+
+    operator Point<CoordDouble>() const {
+        return {static_cast<CoordDouble>(x), static_cast<CoordDouble>(y)};
+    }
+
+    operator Point<DimensionInt>() const {
+        return {static_cast<DimensionInt>(x), static_cast<DimensionInt>(y)};
+    }
+};
+
+template <typename TypeNumber>
+struct Speed {
+    TypeNumber dx, dy;
+};
+
+using Point2i = Point<DimensionInt>;
+using Point2d = Point<CoordDouble>;
+using Speed2d = Speed<CoordDouble>;
+
+/**
+* Структура-хранилка для направления собак
+*/
+struct Direction {
+    Direction() = delete;
+    constexpr const static std::string_view UP    = "U"sv;
+    constexpr const static std::string_view DOWN  = "D"sv;
+    constexpr const static std::string_view LEFT  = "L"sv;
+    constexpr const static std::string_view RIGHT = "R"sv;
+};
+
+struct Object {
+    Point2d position_;
 };
 
 struct Size {
-    Dimension width, height;
+    DimensionInt width, height;
 };
 
 struct Rectangle {
-    Point position;
+    Point2i position;
     Size size;
 };
 
 struct Offset {
-    Dimension dx, dy;
+    DimensionInt dx, dy;
 };
 
 class Road {
@@ -47,17 +83,17 @@ public:
     constexpr static HorizontalTag HORIZONTAL{};
     constexpr static VerticalTag VERTICAL{};
 
-    Road(HorizontalTag, Point start, Coord end_x) noexcept: start_{start}, end_{end_x, start.y} {}
-    Road(VerticalTag, Point start, Coord end_y) noexcept: start_{start}, end_{start.x, end_y} {}
+    Road(HorizontalTag, Point2i start, CoordInt end_x) noexcept: start_{start}, end_{end_x, start.y} {}
+    Road(VerticalTag, Point2i start, CoordInt end_y) noexcept: start_{start}, end_{start.x, end_y} {}
 
     [[nodiscard]] bool IsHorizontal() const noexcept;
     [[nodiscard]] bool IsVertical() const noexcept;
-    [[nodiscard]] Point GetStart() const noexcept;
-    [[nodiscard]] Point GetEnd() const noexcept;
+    [[nodiscard]] Point2i GetStart() const noexcept;
+    [[nodiscard]] Point2i GetEnd() const noexcept;
 
 private:
-    Point start_;
-    Point end_;
+    Point2i start_;
+    Point2i end_;
 };
 
 class Building {
@@ -74,15 +110,15 @@ class Office {
 public:
     using Id = util::Tagged<std::string, Office>;
 
-    Office(Id id, Point position, const Offset& offset) noexcept: id_{std::move(id)}, position_{position}, offset_{offset} {}
+    Office(Id id, Point2i position, const Offset& offset) noexcept: id_{std::move(id)}, position_{position}, offset_{offset} {}
 
     [[nodiscard]] const Id& GetId() const noexcept;
-    [[nodiscard]] Point GetPosition() const noexcept;
+    [[nodiscard]] Point2i GetPosition() const noexcept;
     [[nodiscard]] Offset GetOffset() const noexcept;
 
 private:
     Id id_;
-    Point position_;
+    Point2i position_;
     Offset offset_;
 };
 
@@ -115,20 +151,27 @@ private:
     Offices offices_;
 };
 
-class Dog {
+class Dog : private Object {
 public:
     using Id = util::Tagged<size_t, Dog>;
 
-    Dog(Id id, std::string name) noexcept : id_(id), name_(std::move(name)) {}
+    Dog(Id id, std::string name, Point2d position = {0.0, 0.0}):
+        Object(position), id_(id), name_(std::move(name)) {}
     Dog() = delete;
     ~Dog() = default;
 
     [[nodiscard]] Id GetId() const noexcept;
     [[nodiscard]] const std::string& GetName() const noexcept;
+    void SetPosition(const Point2d& position);
+    [[nodiscard]] const Point2d& GetPosition() const noexcept;
+    [[nodiscard]] const Speed2d & GetSpeed() const noexcept;
+    [[nodiscard]] std::string_view GetDirection() const noexcept;
 
 private:
     Id id_;
     std::string name_;
+    std::string_view dir_{Direction::UP};
+    Speed2d speed_{0.0, 0.0};
 };
 
 class GameSession {
@@ -139,6 +182,7 @@ public:
     explicit GameSession(const Map& map): map_(map), limit_(100) {}
     GameSession(const Map& map, size_t limit): map_(map), limit_(limit) {}
     const Map::Id& GetMapId() const noexcept;
+    const Map& GetMap() const noexcept;
 
     size_t GetActivityPlayers() const noexcept;
     size_t GetLimitPlayers() const noexcept;
@@ -154,7 +198,10 @@ private:
     Dogs dogs_;
 };
 
-bool operator < (const GameSession& lhs, const GameSession& rhs);
+class DropOffGenerator {
+public:
+    Point2i GeneratePosition(const GameSession& session, bool enable = true);
+};
 
 class Game {
 public:
@@ -166,8 +213,9 @@ public:
     const Maps& GetMaps() const noexcept;
     const Map* FindMap(const Map::Id& id) const noexcept;
     std::shared_ptr<GameSession> UpdateSessionFullness(size_t index, const GameSession& session);
-    std::shared_ptr<GameSession> CreateSession(const Map::Id& map_id, const Dog& dog);
+    std::pair<size_t, std::shared_ptr<GameSession>>  CreateFreeSession(const Map::Id& map_id);
     std::optional<std::pair<size_t, std::shared_ptr<GameSession>>> ExtractFreeSession(const Map::Id& map_id);
+    Point2i GenerateNewPosition(const model::GameSession& session, bool enable = true);
 
 private:
     using MapIdHasher = util::TaggedHasher<Map::Id>;
@@ -178,6 +226,7 @@ private:
     MapIdToIndex id_to_map_index_;
     Sessions sessions_;
     MapIdToSessionIndex map_to_sessions_;
+    DropOffGenerator position_generator;
 };
 
 }  // namespace model

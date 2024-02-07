@@ -21,17 +21,17 @@ bool Road::IsVertical() const noexcept {
 
 /**
  * Получить начальную точку маршрута
- * @return Point start;
+ * @return Point2i start;
  */
-Point Road::GetStart() const noexcept {
+Point2i Road::GetStart() const noexcept {
     return start_;
 }
 
 /**
  * Получить конечную точку маршрута
- * @return Point end;
+ * @return Point2i end;
  */
-Point Road::GetEnd() const noexcept {
+Point2i Road::GetEnd() const noexcept {
     return end_;
 }
 
@@ -55,7 +55,7 @@ const Office::Id& Office::GetId() const noexcept {
  * Получить позицию объекта Office
  * @return позиция
  */
-Point Office::GetPosition() const noexcept {
+Point2i Office::GetPosition() const noexcept {
     return position_;
 }
 
@@ -154,8 +154,42 @@ Dog::Id Dog::GetId() const noexcept {
  * Получить имя собаки
  * @return Имя собаки
  */
-const std::string& Dog::GetName() const noexcept{
+const std::string& Dog::GetName() const noexcept {
     return name_;
+}
+
+/**
+ * Присвоить собаке позицию (попутно вычисляет скорость собаки)
+ * @param position Позиция собаки
+ */
+void Dog::SetPosition(const Point2d& position) {
+    speed_.dx = position.x - position_.x;
+    speed_.dy = position.y - position_.y;
+    position_ = position;
+}
+
+/**
+ * Получить позицию собаки
+ * @return Позиция собаки
+ */
+const Point2d& Dog::GetPosition() const noexcept {
+    return position_;
+}
+
+/**
+ * Получить скорость собаки
+ * @return Скорость собаки
+ */
+const Speed2d& Dog::GetSpeed() const noexcept {
+    return speed_;
+}
+
+/**
+ * Получить направление собаки
+ * @return Направление собаки
+ */
+std::string_view Dog::GetDirection() const noexcept {
+    return dir_;
 }
 
 /**
@@ -167,10 +201,18 @@ const Map::Id& GameSession::GetMapId() const noexcept {
 }
 
 /**
+ * Получить ссылку на карту
+ * @return Ссылка на карту
+ */
+const Map& GameSession::GetMap() const noexcept{
+    return map_;
+}
+
+/**
  * Получить количество занятых мест
  * @return Количество занятых мест
  */
-size_t GameSession::GetActivityPlayers() const noexcept{
+size_t GameSession::GetActivityPlayers() const noexcept {
     return dogs_.size();
 }
 
@@ -178,7 +220,7 @@ size_t GameSession::GetActivityPlayers() const noexcept{
  * Получить ограничение количества мест в сесии
  * @return Количество мест сесии
  */
-size_t GameSession::GetLimitPlayers() const noexcept{
+size_t GameSession::GetLimitPlayers() const noexcept {
     return limit_;
 }
 
@@ -186,7 +228,7 @@ size_t GameSession::GetLimitPlayers() const noexcept{
  * Получить количество свободных мест в сесии
  * @return Количество свободных мест
  */
-size_t GameSession::AmountAvailableSeats() const noexcept{
+size_t GameSession::AmountAvailableSeats() const noexcept {
     return (limit_ - dogs_.size());
 }
 
@@ -194,7 +236,7 @@ size_t GameSession::AmountAvailableSeats() const noexcept{
  * Проверяет заполненность сессии.
  * @return Возвращает true, если сессия переполнена, иначе - false.
  */
-bool GameSession::IsFull() const noexcept{
+bool GameSession::IsFull() const noexcept {
     return (AmountAvailableSeats() == 0);
 }
 
@@ -232,8 +274,55 @@ size_t GameSession::EraseDog(const Dog::Id& id){
  * Получить контейнер, содержащий собак
  * @return GameSession::Dogs
  */
-const GameSession::Dogs& GameSession::GetDogs() const noexcept{
+const GameSession::Dogs& GameSession::GetDogs() const noexcept {
     return dogs_;
+}
+
+/**
+ * Генерирует позицию объекта на дороге
+ * @param session сессия
+ * @param enable true - включить генератор, false - возвращать всегда стартовую точку дороги
+ * @return Point2i на дороге
+ */
+Point2i DropOffGenerator::GeneratePosition(const GameSession& session, bool enable){
+    auto& map = session.GetMap();
+    auto& roads = map.GetRoads();
+    if (roads.empty()) {
+            throw std::logic_error("На карте " + *map.GetId() + " нет дорог");
+    }
+    if (!enable) {
+        auto start = roads.at(0).GetStart();
+        return {start.x, start.y};
+    }
+
+    std::random_device random_device;
+    std::mt19937 generator_{[&req = random_device] {
+        std::uniform_int_distribution<std::mt19937::result_type> dist;
+        return dist(req);
+    }()};
+
+    size_t num_road = 0;
+    // Случайно выбираем дорогу
+    if (roads.size() > 1) {
+        num_road = generator_() % roads.size();
+    }
+
+    Road road = roads.at(num_road);
+
+    Point2i start = road.GetStart(), end = road.GetEnd();
+    Point2i result = start;
+
+    auto get_range = [&gen = generator_](int32_t start, int32_t end){
+        return (static_cast<int32_t>(gen()%(end - start + 1)) + start);
+    };
+
+    if (road.IsHorizontal()) {
+        result.x = get_range(start.x, end.x);
+    } else if(road.IsVertical()) {
+        result.y = get_range(start.y, end.y);
+    }
+
+    return result;
 }
 
 /**
@@ -281,7 +370,7 @@ const Map* Game::FindMap(const Map::Id& id) const noexcept {
  * @return Указатель на сессию.
  */
 std::shared_ptr<GameSession> Game::UpdateSessionFullness(size_t index, const GameSession& session) {
-    map_to_sessions_.at(session.GetMapId()).emplace(session.AmountAvailableSeats(), index);
+    map_to_sessions_[session.GetMapId()].emplace(session.AmountAvailableSeats(), index);
     return sessions_.at(index);
 }
 
@@ -291,15 +380,13 @@ std::shared_ptr<GameSession> Game::UpdateSessionFullness(size_t index, const Gam
  * @param dog ссылка на собаку игрока
  * @return Указатель на сессию.
  */
-std::shared_ptr<GameSession> Game::CreateSession(const Map::Id& map_id, const Dog& dog){
+std::pair<size_t, std::shared_ptr<GameSession>> Game::CreateFreeSession(const Map::Id& map_id) {
     auto map = FindMap(map_id);
     if (map == nullptr) {
         throw std::invalid_argument("Map id \""s + *map_id + "\" does not exist"s);
     }
     auto& session = sessions_.emplace_back(std::make_shared<GameSession>(*map));
-    session->AddDog(dog);
-    map_to_sessions_[map_id].emplace(session->AmountAvailableSeats(), sessions_.size() - 1);
-    return session;
+    return {sessions_.size() - 1, session};
 }
 
 /**
@@ -321,5 +408,10 @@ std::optional<std::pair<size_t, std::shared_ptr<GameSession>>> Game::ExtractFree
     }
     return std::nullopt; // создадим новую сессию
 }
+
+Point2i Game::GenerateNewPosition(const model::GameSession& session, bool enable){
+    return position_generator.GeneratePosition(session, enable);
+}
+
 
 }  // namespace model

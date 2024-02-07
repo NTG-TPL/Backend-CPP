@@ -35,28 +35,35 @@ namespace app {
 
     /**
      * Войти в игру
-     * @param id индекс карты
+     * @param map_id индекс карты
      * @param user_name имя игрока (совпадает с именем собаки)
      * @return Возвращает пару <Токен игрока, ссылку на игрока>
      */
-    std::pair<Token, Player&> Application::JoinGame(const model::Map::Id& id, const std::string& user_name){
+    std::pair<Token, Player&> Application::JoinGame(const model::Map::Id& map_id, const std::string& user_name){
         using namespace model;
+        auto optional_session = game_.ExtractFreeSession(map_id);
+        Dog::Id id {dog_id++};
 
-        auto optional_session = game_.ExtractFreeSession(id);
-        Dog dog(Dog::Id {dog_id++}, user_name);
+        auto create_session_and_add_dog = [&](){
+            auto [current_index, session] = game_.CreateFreeSession(map_id); // создаёт пустую сессию
+            session->AddDog({id, user_name, game_.GenerateNewPosition(*session)}); // добавляет в сессию собаку
+            game_.UpdateSessionFullness(current_index, *session); // обновляет порядок сессий относительно заполненности
+            return session;
+        };
+
         if(optional_session.has_value()){ // Нужная сессия есть или была когда-то
             auto [index, session] = optional_session.value();
             if(session == nullptr){ // Эта сессия когда-то была, но в ней нет людей
-                session = game_.CreateSession(id, dog);
+                session = create_session_and_add_dog();
             }else { // Нужная сессия
-                session->AddDog(dog);
+                session->AddDog({id, user_name, game_.GenerateNewPosition(*session)});
                 game_.UpdateSessionFullness(index, *session);
             }
-            return players_.AddPlayer(dog.GetId(), session);
+            return players_.AddPlayer(id, session);
         }
         // Свободных сессий нет, создаётся новая
-        auto session = game_.CreateSession(id, dog);
-        return players_.AddPlayer(dog.GetId(), session);
+        auto session = create_session_and_add_dog();
+        return players_.AddPlayer(id, session);
     }
 
     /**
