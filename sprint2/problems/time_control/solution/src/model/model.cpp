@@ -365,7 +365,7 @@ void GameSession::Update(double delta){
             }
         }
 
-        // Объединение пересечение траектории с допустимой областью
+        // Пересечение траектории с допустимой областью
         if(!union_borders->Contains(new_position)){
             new_position.y = std::max(new_position.y, union_borders->min_y);
             new_position.y = std::min(new_position.y, union_borders->max_y);
