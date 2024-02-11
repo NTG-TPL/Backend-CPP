@@ -50,10 +50,12 @@ namespace http_handler {
                 return !is_post_request() ? method_not_allowed(ErrorResponse::INVALID_POST, Api::POST) : RequestToAction(req);
             }
 
-            if(app_.GetTickMode()){
                 if(decoded_target == EndPoint::TICK){
+                    if(app_.GetTickMode()){
+                        return MakeTextResponse(req, http::status::ok, "{}", CacheControl::NO_CACHE);
+                    }
+
                     return !is_post_request() ? method_not_allowed(ErrorResponse::INVALID_POST, Api::POST) : RequestToTick(req);
-                }
             }
         }
 
@@ -247,12 +249,12 @@ namespace http_handler {
         }
 
         app_.Update(milliseconds);
-        /*auto& players = app_.GetPlayers();
-        json::object json_dogs;
-        for (const auto& player: players.GetList()) {
-            json_dogs[std::to_string(*player.GetId())] = json::value_from(player.GetDog());
-        }
-        obj[UserKey::PLAYERS] = json_dogs;*/
+//        auto& players = app_.GetPlayers();
+//        json::object json_dogs;
+//        for (const auto& player: players.GetList()) {
+//            json_dogs[std::to_string(*player.GetId())] = json::value_from(player.GetDog());
+//        }
+//        obj[UserKey::PLAYERS] = json_dogs;
         return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
     }
 }

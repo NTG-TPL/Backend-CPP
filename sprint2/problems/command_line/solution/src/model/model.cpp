@@ -197,8 +197,8 @@ const std::string& Dog::GetName() const noexcept {
  * @param speed Скорость
  */
 void Dog::Move(std::string_view dir, DimensionDouble speed) {
+    dir_ =  dir != Movement::STOP ? dir : dir_;
     speed_ = Movement::MOVEMENT.at(dir)(speed);
-    dir_ = dir;
 }
 
 /**
@@ -344,8 +344,9 @@ void GameSession::Update(std::chrono::milliseconds tick){
         auto position = dog.GetPosition();
         auto speed = dog.GetSpeed();
 
-        Point2d new_position = {position.x + speed.dx * tick.count()/1000,
-                                position.y + speed.dy * tick.count()/1000};
+        double delta_seconds = static_cast<double >(tick.count())/1000;
+        Point2d new_position = {position.x + speed.dx * delta_seconds,
+                                position.y + speed.dy * delta_seconds};
 
         std::optional<Road::RoadRectangle::Borders> union_borders;
 

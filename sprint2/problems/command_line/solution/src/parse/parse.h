@@ -10,19 +10,6 @@
 
 namespace parse {
     using namespace std::literals;
-
-    /**
-     * Структура для хранения названий параметров командной строки
-     */
-    struct CommandLineOptions {
-        CommandLineOptions() = delete;
-        constexpr static inline const char * HELP_SHORT_HELP  = "help,h";
-        constexpr static inline const char * TICK_PERIOD  = "tick-period,t";
-        constexpr static inline const char * CONFIG = "config-file,c";
-        constexpr static inline const char * WWW_ROOT  = "www-root,w";
-        constexpr static inline const char * RANDOM_SPAWN  = "randomize-spawn-points";
-    };
-
     /**
      * Структура для хранения аргументов командной строки
      */
@@ -41,7 +28,6 @@ namespace parse {
      */
     [[nodiscard]] std::optional<Args> ParseCommandLine(int argc, const char* const argv[]) {
         namespace po = boost::program_options;
-        using CLO = CommandLineOptions;
 
         po::options_description desc{"All options"s};
         Args args;
@@ -51,10 +37,14 @@ namespace parse {
                 ("tick-period,t", po::value<int32_t>(&tick_period)->value_name("milliseconds"), "set tick period")
                 ("config-file,c", po::value(&args.config)->value_name("file"), "set config file path")
                 ("www-root,w", po::value(&args.www_root)->value_name("directory path"), "set static files root")
-                ("randomize-spawn-points", po::value<bool>(&args.randomize_spawn), "spawn dogs at random positions");
+                ("randomize-spawn-points", "spawn dogs at random positions");
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
         po::notify(vm);
+
+        if(vm.contains("randomize-spawn-points")){
+            args.randomize_spawn = true;
+        }
 
         if (vm.contains("tick-period")) {
             args.tick_period = tick_period;

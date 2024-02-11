@@ -197,8 +197,8 @@ const std::string& Dog::GetName() const noexcept {
  * @param speed Скорость
  */
 void Dog::Move(std::string_view dir, DimensionDouble speed) {
+    dir_ =  dir != Movement::STOP ? dir : dir_;
     speed_ = Movement::MOVEMENT.at(dir)(speed);
-    dir_ = dir;
 }
 
 /**

@@ -68,14 +68,16 @@ int main(int argc, const char* argv[]) {
         // strand для выполнения запросов к API
         auto api_strand = net::make_strand(ioc);
 
-        if(args.tick_period.has_value()) {
-            auto ticker = std::make_shared<http_handler::Ticker>(api_strand, 50ms,
+        std::shared_ptr<http_handler::Ticker> ticker;
+        if(!args.tick_period.has_value()) {
+            ticker = std::make_shared<http_handler::Ticker>(api_strand, 50ms,
                                                                  [&app](std::chrono::milliseconds delta) { app.Update(delta); }
             );
             ticker->Start();
         }else {
             app.SetTickMode(true);
         }
+        app.SetRandomSpawm(args.randomize_spawn);
 
         // 3. Добавляем асинхронный обработчик сигналов SIGINT и SIGTERM
         net::signal_set signals(ioc, SIGINT, SIGTERM);
