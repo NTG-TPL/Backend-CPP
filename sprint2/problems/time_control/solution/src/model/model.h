@@ -9,7 +9,8 @@
 #include <map>
 #include <random>
 #include <iostream>
-#include <functional>
+#include <utility>
+#include <cassert>
 
 #include "../util/tagged.h"
 
@@ -32,6 +33,8 @@ struct Point {
     explicit operator Point<DimensionInt>() const {
         return {static_cast<DimensionInt>(x), static_cast<DimensionInt>(y)};
     }
+
+
 };
 
 template <typename TypeNumber>
@@ -44,12 +47,12 @@ using Point2d = Point<CoordDouble>;
 using Velocity2d = Velocity<CoordDouble>;
 
 /**
-* Структура-хранилка для направления собак
+* Структура для хранения движения собак
 */
-struct Direction {
+struct Movement {
     using Function = Velocity2d (*const)(DimensionDouble);
 
-    Direction() = delete;
+    Movement() = delete;
     constexpr const static std::string_view UP    = "U"sv;
     constexpr const static std::string_view DOWN  = "D"sv;
     constexpr const static std::string_view LEFT  = "L"sv;
@@ -62,15 +65,15 @@ struct Direction {
     static Velocity2d MoveRight(DimensionDouble speed){ return {speed, 0.0}; }
     static Velocity2d Stand(DimensionDouble _ = 0.0){ return {0.0, 0.0};}
 
-    static std::unordered_map<std::string_view, Function> InitDirection() {
-        return {{Direction::UP,    MoveUp},
-                {Direction::DOWN,  MoveDown},
-                {Direction::LEFT,  MoveLeft},
-                {Direction::RIGHT, MoveRight},
-                {Direction::STOP,    Stand}};
+    static std::unordered_map<std::string_view, Function> InitMovement() {
+        return {{Movement::UP,    MoveUp},
+                {Movement::DOWN,  MoveDown},
+                {Movement::LEFT,  MoveLeft},
+                {Movement::RIGHT, MoveRight},
+                {Movement::STOP,  Stand}};
     }
 
-    static inline const std::unordered_map<std::string_view, Function> DIRECTION = InitDirection();
+    static inline const std::unordered_map<std::string_view, Function> MOVEMENT = InitMovement();
 };
 
 struct Object {
@@ -100,20 +103,60 @@ class Road {
     };
 
 public:
+    class RoadRectangle {
+    public:
+        struct Borders {
+            CoordDouble min_x, max_x,
+                        min_y, max_y;
+
+            inline bool Contains(Point2d point){
+                return  point.x >= min_x && point.x <= max_x &&
+                        point.y >= min_y && point.y <= max_y;
+            }
+        };
+
+        RoadRectangle (Point2d start, Point2d end, DimensionDouble width) :
+                borders_{std::min(start.x, end.x) - width / 2,
+                         std::max(start.x, end.x) + width / 2,
+                         std::min(start.y, end.y) - width / 2,
+                         std::max(start.y, end.y) + width / 2},
+                width_(width) {}
+
+        [[nodiscard]] Borders GetBorders() const {
+            return borders_;
+        }
+
+        [[nodiscard]] DimensionDouble GetWidth() const{
+            return width_;
+        }
+
+    private:
+        Borders borders_;
+        DimensionDouble width_;
+    };
+
     constexpr static HorizontalTag HORIZONTAL{};
     constexpr static VerticalTag VERTICAL{};
 
-    Road(HorizontalTag, Point2i start, CoordInt end_x) noexcept: start_{start}, end_{end_x, start.y} {}
-    Road(VerticalTag, Point2i start, CoordInt end_y) noexcept: start_{start}, end_{start.x, end_y} {}
+    Road(HorizontalTag, Point2i start, CoordInt end_x, DimensionDouble width = 0.8) noexcept:
+            start_{start}, end_{end_x, start.y},
+            road_rectangle_(static_cast<Point2d>(start_), static_cast<Point2d>(end_), width) {}
+    Road(VerticalTag, Point2i start, CoordInt end_y, DimensionDouble width = 0.8) noexcept:
+            start_{start}, end_{start.x, end_y},
+            road_rectangle_(static_cast<Point2d>(start_), static_cast<Point2d>(end_), width) {}
 
     [[nodiscard]] bool IsHorizontal() const noexcept;
     [[nodiscard]] bool IsVertical() const noexcept;
     [[nodiscard]] Point2i GetStart() const noexcept;
     [[nodiscard]] Point2i GetEnd() const noexcept;
+    [[nodiscard]] Road::RoadRectangle::Borders GetBorders() const noexcept;
+    [[nodiscard]] DimensionDouble GetWidth() const noexcept;
+    [[nodiscard]] bool Contains(Point2d point) const noexcept;
 
 private:
     Point2i start_;
     Point2i end_;
+    RoadRectangle road_rectangle_;
 };
 
 class Building {
@@ -187,15 +230,17 @@ public:
     [[nodiscard]] Id GetId() const noexcept;
     [[nodiscard]] const std::string& GetName() const noexcept;
     void Move(std::string_view dir, DimensionDouble speed);
-    [[nodiscard]] const Point2d& GetPosition() const noexcept;
-    [[nodiscard]] const Velocity2d & GetSpeed() const noexcept;
-    [[nodiscard]] std::string_view GetDirection() const noexcept;
+    void SetPosition(Point2d new_point);
+    void Stand();
+    [[nodiscard]] Point2d GetPosition() const noexcept;
+    [[nodiscard]] Velocity2d GetSpeed() const noexcept;
+    [[nodiscard]] std::string GetDirection() const noexcept;
 
 private:
     Id id_;
     std::string name_;
-    std::string_view dir_{Direction::UP};
-    Velocity2d speed_{Direction::Stand()};
+    std::string dir_{Movement::UP}; // Поменять на string_view ?
+    Velocity2d speed_{Movement::Stand()};
 };
 
 class GameSession {
@@ -216,6 +261,9 @@ public:
     Dog * AddDog(const Dog& dog);
     size_t EraseDog(const Dog::Id& id);
     [[nodiscard]] const Dogs& GetDogs() const noexcept;
+    Point2d GenerateNewPosition(bool enable = true) const;
+    void Update(double delta);
+
 private:
     const Map& map_;
     size_t limit_;
@@ -224,7 +272,7 @@ private:
 
 class DropOffGenerator {
 public:
-    static Point2i GeneratePosition(const GameSession& session, bool enable = true);
+    static Point2d GeneratePosition(const GameSession& session, bool enable = true);
 };
 
 class Game {
@@ -239,7 +287,7 @@ public:
     std::shared_ptr<GameSession> UpdateSessionFullness(size_t index, const GameSession& session);
     std::pair<size_t, std::shared_ptr<GameSession>>  CreateFreeSession(const Map::Id& map_id);
     std::optional<std::pair<size_t, std::shared_ptr<GameSession>>> ExtractFreeSession(const Map::Id& map_id);
-    static Point2i GenerateNewPosition(const model::GameSession& session, bool enable = true);
+    void Update(double tick);
 
 private:
     using MapIdHasher = util::TaggedHasher<Map::Id>;

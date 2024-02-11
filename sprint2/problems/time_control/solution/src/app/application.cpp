@@ -42,11 +42,11 @@ namespace app {
     std::pair<Token, Player&> Application::JoinGame(const model::Map::Id& map_id, const std::string& user_name){
         using namespace model;
         auto optional_session = game_.ExtractFreeSession(map_id);
-        Dog::Id id {dog_id++};
+        Dog::Id id {dog_id_++};
 
         auto create_session_and_add_dog = [&](){
             auto [current_index, session] = game_.CreateFreeSession(map_id); // создаёт пустую сессию
-            session->AddDog({id, user_name, static_cast<Point2d>(Game::GenerateNewPosition(*session))}); // добавляет в сессию собаку
+            session->AddDog({id, user_name, static_cast<Point2d>(session->GenerateNewPosition(false))}); // добавляет в сессию собаку
             game_.UpdateSessionFullness(current_index, *session); // обновляет порядок сессий относительно заполненности
             return session;
         };
@@ -56,7 +56,7 @@ namespace app {
             if(session == nullptr){ // Эта сессия когда-то была, но в ней нет людей
                 session = create_session_and_add_dog();
             }else { // Нужная сессия
-                session->AddDog({id, user_name, static_cast<Point2d>(Game::GenerateNewPosition(*session))});
+                session->AddDog({id, user_name, static_cast<Point2d>(session->GenerateNewPosition(false))});
                 game_.UpdateSessionFullness(index, *session);
             }
             return players_.AddPlayer(id, session);
@@ -82,4 +82,29 @@ namespace app {
     const Players& Application::GetPlayers() const noexcept {
         return players_;
     }
+
+    /**
+     * Обновляет состояние приложения
+     * @param tick время
+     */
+    void Application::Update(double tick){
+        game_.Update(tick);
+    }
+
+    /**
+     * Получить время в секундах
+     * @return Время
+     */
+    double Application::GetTime(){
+        return time_;
+    }
+
+    /**
+     * Добавить tick к общему врмени
+     * @param tick интервал обновления игры
+     */
+    void Application::AddTick(double tick){
+        time_ += tick;
+    }
+
 }

@@ -71,6 +71,7 @@ namespace model {
         constexpr const static boost::json::string_view SPEED             = "speed";
         constexpr const static boost::json::string_view DIRECTION         = "dir";
         constexpr const static boost::json::string_view MOVE              = "move";
+        constexpr const static boost::json::string_view TIME_INTERVAL     = "timeDelta";
     };
 } // namespace model
 #endif //GAME_SERVER_TAG_INVOKE_H

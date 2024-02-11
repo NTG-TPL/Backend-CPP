@@ -49,9 +49,13 @@ namespace http_handler {
             if (decoded_target == EndPoint::ACTION) {
                 return !is_post_request() ? method_not_allowed(ErrorResponse::INVALID_POST, Api::POST) : RequestToAction(req);
             }
+
+            if(decoded_target == EndPoint::TICK){
+                return !is_post_request() ? method_not_allowed(ErrorResponse::INVALID_POST, Api::POST) : RequestToTick(req);
+            }
         }
 
-        return MakeTextResponse(req, http::status::method_not_allowed, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
+        return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
     }
 
     /**
@@ -169,15 +173,15 @@ namespace http_handler {
      */
     StringResponse ApiHandler::RequestToMaps(const StringRequest& req, std::string & decoded_target) {
         if (decoded_target == EndPoint::MAPS) {
-            return MakeTextResponse(req, http::status::ok, json::serialize(json::value_from(app_.GetMaps())));
+            return MakeTextResponse(req, http::status::ok, json::serialize(json::value_from(app_.GetMaps())), CacheControl::NO_CACHE);
         }
         if (decoded_target.starts_with(EndPoint::MAP)) {
             std::string id = std::string{decoded_target.substr(EndPoint::MAP.size())};
             auto map = app_.FindMap(model::Map::Id(id));
             if (map) {
-                return MakeTextResponse(req, http::status::ok, json::serialize(json::value_from(*map)));
+                return MakeTextResponse(req, http::status::ok, json::serialize(json::value_from(*map)), CacheControl::NO_CACHE);
             } else {
-                return MakeTextResponse(req, http::status::not_found, ErrorResponse::MAP_NOT_FOUND);
+                return MakeTextResponse(req, http::status::not_found, ErrorResponse::MAP_NOT_FOUND, CacheControl::NO_CACHE);
             }
         }
         return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
@@ -220,8 +224,38 @@ namespace http_handler {
                 return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_ACTION, CacheControl::NO_CACHE );
             }
 
-
             return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
         });
+    }
+
+    /**
+     * Ответ на запрос об обновлении игры
+     * @param req Запрос StringRequest {http::request<http::string_body>}
+     * @return Возвращает ответ StringResponse{http::response<http::string_body>}
+     */
+    StringResponse ApiHandler::RequestToTick(const StringRequest& req){
+        using namespace model;
+            json::object obj;
+        double seconds = 0.0;
+        try{
+            json::object json_body = json::parse(req.body()).as_object();
+            seconds = static_cast<double>(json_body.at(UserKey::TIME_INTERVAL).as_int64()) / 1000;
+        } catch (...) {
+            return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_TICK, CacheControl::NO_CACHE );
+        }
+
+        app_.Update(seconds);
+        if(app_.GetTime() == 0.0){
+            app_.AddTick(seconds);
+        }else{
+            app_.AddTick(seconds);
+            auto& players = app_.GetPlayers();
+            json::object json_dogs;
+            for (const auto& player: players.GetList()) {
+                json_dogs[std::to_string(*player.GetId())] = json::value_from(player.GetDog());
+            }
+            obj[UserKey::PLAYERS] = json_dogs;
+        }
+        return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
     }
 }

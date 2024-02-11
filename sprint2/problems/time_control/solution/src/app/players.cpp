@@ -18,6 +18,14 @@ namespace app {
     }
 
     /**
+     * Получить собаку игрока
+     * @return Константная ссылка на собаку
+     */
+    [[nodiscard]] const model::Dog& Player::GetDog() const noexcept{
+        return dog_;
+    }
+
+    /**
      * Получить индекс игрока (совпадает с индексом собаки)
      * @return Индекс игрока
      */
@@ -90,5 +98,13 @@ namespace app {
      */
     Player* Players::FindByToken(const Token& token){
         return tokens.FindPlayer(token);
+    }
+
+    /**
+     * Получить список игроков
+     * @return список игроков {deque<Player>}
+     */
+    const Players::PlayerList& Players::GetList() const noexcept{
+        return players_;
     }
 }

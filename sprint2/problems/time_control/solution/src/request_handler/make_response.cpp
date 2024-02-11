@@ -1,6 +1,17 @@
 #include "make_response.h"
 
 namespace http_handler {
+    /**
+     * Создаёт текстовый ответ StringResponse = http::response<http::string_body>
+     * @param status статус-код
+     * @param body тело запроса
+     * @param http_version версия HTTP протокола
+     * @param keep_alive Опция сокета для отправки сообщений проверки активности
+     * @param content_type Заголовок для определения MIME типа ресурса
+     * @param cache_control директива управляет поведением кэширования
+     * @param allow директива разрешает обход разделов или отдельных страниц сайта.
+     * @return StringResponse = http::response<http::string_body>
+     */
     StringResponse MakeStringResponse(http::status status, std::string_view body, unsigned http_version,
                                       bool keep_alive, std::string_view content_type,
                                       std::string_view cache_control, std::string_view allow) {
@@ -18,11 +29,29 @@ namespace http_handler {
         return response;
     }
 
+    /**
+     * Создаёт текстовый ответ
+     * @param req запрос
+     * @param status статус-код
+     * @param text текстовое тело запроса
+     * @param cache_control директива управляет поведением кэширования
+     * @param allow директива разрешает обход разделов или отдельных страниц сайта.
+     * @return StringResponse = http::response<http::string_body>
+     */
     StringResponse MakeTextResponse(const StringRequest& req, http::status status, std::string_view text,
                                                 std::string_view cache_control, std::string_view allow) {
         return MakeStringResponse(status, text, req.version(), req.keep_alive(), ContentType::APPLICATION_JSON, cache_control, allow);
     }
 
+    /**
+     * Создаёт ответ на передачу файлов
+     * @param status статус-код
+     * @param body тело запроса
+     * @param http_version версия HTTP протокола
+     * @param keep_alive Опция сокета для отправки сообщений проверки активности
+     * @param content_type Заголовок для определения MIME типа ресурса
+     * @return FileResponse = http::response<http::file_body>
+     */
     FileResponse MakeFileResponse(http::status status, http::file_body::value_type& body, unsigned http_version,
                                                bool keep_alive, std::string_view content_type) {
         FileResponse response(status, http_version);

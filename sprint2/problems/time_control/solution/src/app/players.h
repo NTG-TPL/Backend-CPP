@@ -22,6 +22,7 @@ namespace app {
             dog_(dog), session_(std::move(session)) {}
         [[nodiscard]] const model::GameSession& GetSession() const noexcept;
         [[nodiscard]] model::Dog& GetDog();
+        [[nodiscard]] const model::Dog& GetDog() const noexcept;
         [[nodiscard]] Id GetId() const noexcept;
 
     private:
@@ -60,7 +61,7 @@ namespace app {
         std::pair<Token, Player&> AddPlayer(const model::Dog::Id& id, const std::shared_ptr<model::GameSession>& session);
         const Player* FindByDogIdAndMapId(const model::Dog::Id& dog_id, const model::Map::Id& map_id) const;
         Player* FindByToken(const Token& token);
-
+        const PlayerList& GetList() const noexcept;
 
     private:
         class Hash {

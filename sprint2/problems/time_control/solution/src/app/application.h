@@ -24,6 +24,9 @@ namespace app {
         std::pair<Token, Player&> JoinGame(const model::Map::Id& map_id, const std::string &user_name);
         Player* FindPlayer(const Token &token);
         const Players& GetPlayers() const noexcept;
+        void Update(double tick);
+        static double GetTime();
+        static void AddTick(double tick);
 
     private:
         static model::Game InitGame(const fs::path& config);
@@ -31,7 +34,8 @@ namespace app {
     private:
         model::Game game_;
         Players players_;
-        static inline std::atomic<size_t> dog_id = 0;
+        static inline std::atomic<uint64_t > dog_id_ = 0;
+        static inline std::atomic<double> time_ = 0; // время в секундах
     };
 }
 

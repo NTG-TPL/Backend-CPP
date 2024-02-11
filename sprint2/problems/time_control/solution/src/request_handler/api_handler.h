@@ -55,6 +55,7 @@ namespace http_handler {
         StringResponse RequestToMaps(const StringRequest& req, std::string & decoded_target);
         StringResponse RequestToState(const StringRequest& req);
         StringResponse RequestToAction(const StringRequest& req);
+        StringResponse RequestToTick(const StringRequest& req);
     private:
         app::Application& app_;
     };

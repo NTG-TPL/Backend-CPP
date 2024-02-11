@@ -14,6 +14,7 @@ namespace http_handler {
         constexpr static std::string_view FILE_NOT_FOUND   = R"({"code": "NotFound", "message": "File not found"})"sv;
         constexpr static std::string_view BAD_PARSE_JOIN   = R"({"code": "invalidArgument", "message": "Join game request parse error"})"sv;
         constexpr static std::string_view BAD_PARSE_ACTION = R"({"code": "invalidArgument", "message": "Failed to parse action"})"sv;
+        constexpr static std::string_view BAD_PARSE_TICK   = R"({"code": "invalidArgument", "message": "Failed to parse tick request JSON"})"sv;
         constexpr static std::string_view USERNAME_EMPTY   = R"({"code": "invalidArgument", "message": "Invalid name"})"sv;
         constexpr static std::string_view INVALID_TOKEN    = R"({"code": "invalidToken", "message": "Authorization header is missing"})"sv;
         constexpr static std::string_view UNKNOWN_TOKEN    = R"({"code": "unknownToken", "message": "Player token has not been found"})"sv;
