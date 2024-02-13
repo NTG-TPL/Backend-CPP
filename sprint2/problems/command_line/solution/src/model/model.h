@@ -299,5 +299,4 @@ private:
     Sessions sessions_;
     MapIdToSessionIndex map_to_sessions_;
 };
-
 }  // namespace model

@@ -201,6 +201,7 @@ void Dog::Move(std::string_view dir, DimensionDouble speed) {
     speed_ = Movement::MOVEMENT.at(dir)(speed);
 }
 
+
 /**
  * Присваивает позицию собаке
  * @param new_point Позиция
@@ -532,5 +533,4 @@ void Game::Update(std::chrono::milliseconds tick){
         }
     }
 }
-
 }  // namespace model
