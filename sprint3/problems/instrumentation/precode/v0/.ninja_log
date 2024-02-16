@@ -1,0 +1,7 @@
+# ninja log v5
+1	28	1708074491198052534	CMakeFiles/events2dot.dir/main.cpp.o	c4ca8102f489dc0
+1	33	1708074491202052583	CMakeFiles/events2dot.dir/graph.cpp.o	3d1dfffafcc297f8
+0	27	1708074491190052438	CMakeFiles/events2dot.dir/dotgen.cpp.o	54d5d0b70a2dc3db
+33	58	1708074491226052872	events2dot	80627c2c336b5a59
+0	28	1708074491198052534	CMakeFiles/events2dot.dir/config.cpp.o	269985877c9bc5d3
+1	28	1708074491198052534	CMakeFiles/events2dot.dir/readfile.cpp.o	b78fbc5f1ef974f7

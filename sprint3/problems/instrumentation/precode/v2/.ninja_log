@@ -1,0 +1,20 @@
+# ninja log v5
+0	33	1708076486464370740	CMakeFiles/events2dot.dir/main.cpp.o	32de40ef7966cc12
+1	32	1708076365609273846	CMakeFiles/main.cpp.dir/readfile.cpp.o	dc9a482a24313d22
+0	40	1708076486476371035	CMakeFiles/events2dot.dir/graph.cpp.o	be2e3ddd0cc1d831
+1	33	1708076486464370740	CMakeFiles/events2dot.dir/dotgen.cpp.o	f3a2f419a25b746d
+40	86	1708076486520372122	events2dot	ce39b4aa5d784dd7
+0	32	1708076365609273846	CMakeFiles/main.cpp.dir/config.cpp.o	326662eeb41142fc
+0	32	1708076486464370740	CMakeFiles/events2dot.dir/config.cpp.o	50c6f7866e6c30ec
+1	33	1708076486464370740	CMakeFiles/events2dot.dir/readfile.cpp.o	2a27084f8587d22b
+0	39	1708076365621274166	CMakeFiles/main.cpp.dir/graph.cpp.o	ca5f26c06d3cac2d
+0	32	1708076486464370740	CMakeFiles/events2dot.dir/binarytree.cpp.o	9b27bb3b4ba31211
+0	32	1708076365609273846	CMakeFiles/main.cpp.dir/binarytree.cpp.o	7c07cff1a6daafff
+0	31	1708076365609273846	CMakeFiles/main.cpp.dir/dotgen.cpp.o	21d842ab994f225b
+1	38	1708077167522983316	CMakeFiles/events2dot.dir/config.cpp.o	6d2848c68a62a7b
+0	38	1708077167522983316	CMakeFiles/events2dot.dir/main.cpp.o	26302ac977b60b6f
+1	38	1708077167522983316	CMakeFiles/events2dot.dir/readfile.cpp.o	9957b3bc1f4b8a29
+1	40	1708077167522983316	CMakeFiles/events2dot.dir/dotgen.cpp.o	174331bb22ed1825
+1	40	1708077167522983316	CMakeFiles/events2dot.dir/binarytree.cpp.o	cc2272b04a70afd5
+1	48	1708077167530983470	CMakeFiles/events2dot.dir/graph.cpp.o	f9ef00578c3649f5
+48	96	1708077167578984399	events2dot	582ce8eaa920f31
