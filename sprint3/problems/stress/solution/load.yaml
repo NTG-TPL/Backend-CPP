@@ -1,0 +1,21 @@
+overload:
+  enabled: false                        # загрузка результатов в сервис-агрегатор 
+                                        # https://overload.yandex.net
+phantom:
+  address: 127.0.0.1:8080               # адрес тестируемого приложения
+  ammofile: /var/loadtest/ammo.txt      # путь к файлу с патронами
+  ammo_type: uripost                    # тип запросов POST (или uri для GET)
+  load_profile:
+    load_type: rps                      # тип нагрузки (или instances - если хотим 
+                                        # указать кол-во потоков для обстрела 
+                                        # максимальном возможным rps, генерируемым 
+                                        # каждым потоком)
+    schedule: const(100000, 1m)         # постоянный профиль в 100000 rps в течении 1 минуты 
+                                        # минуты
+  ssl: false                            # если нужна поддержка https, то true
+  
+console:
+  enabled: true                         # отображение в консоли процесса стрельбы 
+                                        # и результатов
+telegraf:
+  enabled: false                        # модуль мониторинга системных ресурсов
