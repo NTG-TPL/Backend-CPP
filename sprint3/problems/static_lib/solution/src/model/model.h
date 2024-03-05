@@ -14,7 +14,7 @@
 #include <utility>
 #include <chrono>
 
-#include "../util/tagged.h"
+#include "../tagged.h"
 #include "../loot_generator/loot_generator.h"
 
 namespace model {
