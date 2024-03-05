@@ -1,9 +1,9 @@
 #include "collision_detector.h"
 #include <cassert>
 
-namespace collision_detector {
+namespace model {
 
-CollectionResult TryCollectPoint(geom::Point2D a, geom::Point2D b, geom::Point2D c) {
+CollectionResult TryCollectPoint(Point2d a, Point2d b, Point2d c) {
     // Проверим, что перемещение ненулевое.
     // Тут приходится использовать строгое равенство, а не приближённое,
     // поскольку при сборе заказов придётся учитывать перемещение даже на небольшое
@@ -26,7 +26,7 @@ std::vector<GatheringEvent> FindGatherEvents(
     const ItemGathererProvider& provider) {
     std::vector<GatheringEvent> detected_events;
 
-    static auto eq_pt = [](geom::Point2D p1, geom::Point2D p2) {
+    static auto eq_pt = [](Point2d p1, Point2d p2) {
         return p1.x == p2.x && p1.y == p2.y;
     };
 
@@ -38,9 +38,9 @@ std::vector<GatheringEvent> FindGatherEvents(
         for (size_t i = 0; i < provider.ItemsCount(); ++i) {
             Item item = provider.GetItem(i);
             auto collect_result
-                = TryCollectPoint(gatherer.start_pos, gatherer.end_pos, item.position);
+                = TryCollectPoint(gatherer.start_pos, gatherer.end_pos, item.GetPosition());
 
-            if (collect_result.IsCollected(gatherer.width + item.width)) {
+            if (collect_result.IsCollected(gatherer.width + item.GetWidth())) {
                 GatheringEvent evt{.item_id = i,
                                    .gatherer_id = g,
                                    .sq_distance = collect_result.sq_distance,
