@@ -65,8 +65,7 @@ set(MODEL
 		src/model/game.h
 		src/model/collision_detector.cpp
 		src/model/collision_detector.h
-		src/model/collision_handler.cpp
-		src/model/collision_handler.h
+		src/model/item_gatherer.h
 )
 
 set(HANDLER

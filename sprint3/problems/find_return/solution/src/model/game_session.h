@@ -5,7 +5,7 @@
 #include "map.h"
 #include "dog.h"
 #include "../loot_generator/loot_generator.h"
-#include "collision_handler.h"
+#include "item_gatherer.h"
 namespace model {
 
 class GameSession {
