@@ -96,10 +96,11 @@ add_library(${MODEL_LIB} STATIC
 		src/sdk.h
 )
 
-target_include_directories(ModelLib PUBLIC ${BOOST_LIB})
-target_link_libraries(ModelLib PUBLIC ${BOOST_LIB} ${ZLIB_LIB})
+target_include_directories(${MODEL_LIB} PUBLIC ${BOOST_LIB})
+target_link_libraries(${MODEL_LIB} PUBLIC ${BOOST_LIB} ${ZLIB_LIB})
 
-add_executable(game_server
+
+add_executable(${PROJECT_NAME}
 		src/main.cpp
 		${PARSE}
 		${UTIL}
@@ -110,11 +111,10 @@ add_executable(game_server
 		${APPLICATION}
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${MODEL_LIB})
-
 set(GAME_SERVER_TESTS game_server_tests)
-
 add_executable(${GAME_SERVER_TESTS} ${TESTS})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${MODEL_LIB})
 target_link_libraries(${GAME_SERVER_TESTS} PRIVATE ${CATCH2_LIB} ${MODEL_LIB})
 
 catch_discover_tests(${GAME_SERVER_TESTS})
