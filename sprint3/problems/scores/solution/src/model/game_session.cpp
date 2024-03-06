@@ -123,13 +123,12 @@ void GameSession::GenerateLoot(std::chrono::milliseconds tick, bool enable) {
     }
 
     for(size_t i = 0; i < count; ++i) {
-        loots_.emplace(Loot::Id{loot_id_++},
-                       std::make_shared<Loot>(
-                               Loot::Id{loot_id_++},
-                               map_.GetLootTypes().at(loot_index),
-                               GenerateNewPosition(enable),
-                               loot_index
-                               ));
+        auto id = Loot::Id{loot_id_++};
+        loots_.emplace(id, std::make_shared<Loot>(id,
+                                                  map_.GetLootTypes().at(loot_index),
+                                                  GenerateNewPosition(enable),
+                                                  loot_index
+                                                  ));
     }
 }
 
@@ -163,6 +162,7 @@ void GameSession::DetectCollisionWithRoadBorders(Dog& dog, Point2d current_posit
         new_position.x = std::min(new_position.x, union_borders->max_x);
         dog.Stand();
     }
+    dog.SetPosition(new_position);
 }
 
 /**
@@ -222,12 +222,12 @@ void GameSession::Update(std::chrono::milliseconds tick){
         auto position = dog.GetPosition();
         auto speed = dog.GetSpeed();
 
-        double delta_seconds = static_cast<double >(tick.count())/1000;
+        static constexpr const std::int32_t divider = 1000;
+        double delta_seconds = static_cast<double>(tick.count())/divider;
         Point2d new_position = {position.x + speed.dx * delta_seconds,
                                 position.y + speed.dy * delta_seconds};
 
         DetectCollisionWithRoadBorders(dog, position, new_position);
-        dog.SetPosition(new_position);
 
         // Добавление собак в сборщик предметов для дальнейшего разрешения временных конфликтов
         gather_by_index.emplace(dog_index++, dog);
@@ -266,11 +266,15 @@ void GameSession::Update(std::chrono::milliseconds tick){
                 end = static_cast<Point2d>(road.GetEnd());
         Point2d result = start;
 
+        static auto floor_2 = [](DimensionDouble number){
+            return std::floor(number * 100)/100.0; // округляет до двух знаков после запятой
+        };
+
         DimensionDouble width_2 = road.GetWidth() / 2;
         {
             std::uniform_real_distribution<DimensionDouble> dist(-width_2, width_2);
             width_2 = GenerateInRange(-width_2, width_2);
-            width_2 = std::floor(width_2 * 100)/100.0; // округление до двух знаков после запятой
+            width_2 = floor_2(width_2);
         }
 
         if (road.IsHorizontal()) {
@@ -280,10 +284,8 @@ void GameSession::Update(std::chrono::milliseconds tick){
             result.y = GenerateInRange(start.y, end.y);
             result.x += width_2;
         }
-
-        // округление до двух знаков после запятой
-        result.x = std::floor(result.x * 100)/100.0;
-        result.y = std::floor(result.y * 100)/100.0;
+        result.x = floor_2(result.x);
+        result.y = floor_2(result.y);
 
         return result;
     }

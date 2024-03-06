@@ -15,7 +15,8 @@ public:
     using Bag = std::vector<std::shared_ptr<Loot>>;
 
     Dog(Id id, std::string name, Point2d position = {0.0, 0.0}) noexcept:
-            Object(position, ObjectWidth::DOG_WIDTH), id_(id), name_(std::move(name)) {
+            Object(position, ObjectWidth::DOG_WIDTH), id_(id), name_(std::move(name)),
+            dir_(Movement::UP), speed_(Movement::Stand()), score_(0){
     }
 
     Dog() = delete;
@@ -28,7 +29,7 @@ public:
     void Stand();
     void MoveLootToBag(std::shared_ptr<Loot> loot);
     [[nodiscard]] Velocity2d GetSpeed() const noexcept;
-    [[nodiscard]] std::string GetDirection() const noexcept;
+    [[nodiscard]] std::string_view GetDirection() const noexcept;
     [[nodiscard]] const Dog::Bag& GetBag() const noexcept;
     [[nodiscard]] std::int64_t GetScore() const noexcept;
     void BagClear() noexcept;
@@ -36,8 +37,8 @@ public:
 private:
     Id id_;
     std::string name_;
-    std::string dir_{Movement::UP}; //FIXME:: Поменять на string_view ?
-    Velocity2d speed_{Movement::Stand()};
+    std::string_view dir_;
+    Velocity2d speed_;
     Bag bag_;
     std::int64_t score_;
 };

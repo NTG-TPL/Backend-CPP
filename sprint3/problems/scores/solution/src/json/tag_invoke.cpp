@@ -135,7 +135,7 @@ void tag_invoke(boost::json::value_from_tag, boost::json::value& json_value, Dog
     object obj;
     obj[UserKey::POSITION] = {dog.GetPosition().x, dog.GetPosition().y};
     obj[UserKey::SPEED] = {dog.GetSpeed().dx, dog.GetSpeed().dy};
-    obj[UserKey::DIRECTION] = dog.GetDirection();
+    obj[UserKey::DIRECTION] = std::string{dog.GetDirection()};
     obj[LootKey::BAG] = value_from(dog.GetBag());
     obj[LootKey::SCORE] = dog.GetScore();
 

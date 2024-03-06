@@ -24,7 +24,12 @@ const std::string& Dog::GetName() const noexcept {
 * @param speed Скорость
 */
 void Dog::Move(std::string_view dir, DimensionDouble speed) {
-    dir_ =  dir != Movement::STOP ? dir : dir_;
+    using namespace std::string_literals;
+    auto it = Movement::MOVEMENT_VIEW.find(dir);
+    if(it == Movement::MOVEMENT_VIEW.end()){
+        throw std::domain_error("Movement in the direction of <"s + std::string{dir} +"> is not supported"s);
+    }
+    dir_ =  (dir != Movement::STOP) ? *it : dir_;
     speed_ = Movement::MOVEMENT.at(dir)(speed);
 }
 
@@ -63,7 +68,7 @@ Velocity2d Dog::GetSpeed() const noexcept {
 * Получить направление собаки
 * @return Направление собаки
 */
-std::string Dog::GetDirection() const noexcept {
+std::string_view Dog::GetDirection() const noexcept {
     return dir_;
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include <unordered_set>
 #include <string_view>
 
 #include "geom.h"
@@ -11,6 +12,9 @@ using namespace std::string_view_literals;
 */
 struct Movement {
     using Function = Velocity2d (*const)(DimensionDouble);
+    using MovementMap = std::unordered_map<std::string_view, Function>;
+    using MovementViewSet = std::unordered_set<std::string_view>;
+
 
     Movement() = delete;
     constexpr const static std::string_view UP    = "U"sv;
@@ -25,7 +29,7 @@ struct Movement {
     static Velocity2d MoveRight(DimensionDouble speed){ return {speed, 0.0}; }
     static Velocity2d Stand(DimensionDouble _ = 0.0){ return {0.0, 0.0};}
 
-    static std::unordered_map<std::string_view, Function> InitMovement() {
+    static MovementMap InitMovement() {
         return {{Movement::UP,    MoveUp},
                 {Movement::DOWN,  MoveDown},
                 {Movement::LEFT,  MoveLeft},
@@ -33,6 +37,15 @@ struct Movement {
                 {Movement::STOP,  Stand}};
     }
 
-    static inline const std::unordered_map<std::string_view, Function> MOVEMENT = InitMovement();
+    static MovementViewSet InitMovementView() {
+        return {Movement::UP,
+                Movement::DOWN,
+                Movement::LEFT,
+                Movement::RIGHT,
+                Movement::STOP};
+    }
+
+    static inline const MovementMap MOVEMENT = InitMovement();
+    static inline const MovementViewSet MOVEMENT_VIEW = InitMovementView();
 };
 } // namespace model

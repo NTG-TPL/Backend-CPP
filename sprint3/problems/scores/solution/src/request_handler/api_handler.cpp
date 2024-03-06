@@ -179,8 +179,8 @@ StringResponse ApiHandler::RequestToMaps(const StringRequest& req, std::string &
     if (decoded_target == EndPoint::MAPS) {
         return MakeTextResponse(req, http::status::ok, json::serialize(json::value_from(app_.GetMaps())), CacheControl::NO_CACHE);
     }
-    if (decoded_target.starts_with(EndPoint::MAP)) {
-        std::string id = std::string{decoded_target.substr(EndPoint::MAP.size())};
+    if (decoded_target.starts_with(EndPoint::MAP_PREFIX)) {
+        std::string id = std::string{decoded_target.substr(EndPoint::MAP_PREFIX.size())};
         auto map = app_.FindMap(model::Map::Id(id));
         if (map) {
             return MakeTextResponse(req, http::status::ok, json::serialize(json::value_from(*map)), CacheControl::NO_CACHE);
