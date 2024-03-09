@@ -74,7 +74,7 @@ StringResponse ApiHandler::RequestForListPlayers(const StringRequest& req){
         json::object obj;
         auto dogs = player.GetSession().GetDogs();
         for (const auto &[id, dog]: dogs) {
-            obj[std::to_string(*id)] = {UserKey::NAME, dog.GetName()};
+            obj[std::to_string(*id)] = {UserKey::NAME, dog->GetName()};
         }
 
         return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
@@ -205,7 +205,7 @@ StringResponse ApiHandler::RequestToState(const StringRequest& req) {
         auto& dogs = session.GetDogs();
         json::object json_dogs, json_loots;
         for (const auto &[id, dog]: dogs) {
-            json_dogs[std::to_string(*id)] = json::value_from(dog);
+            json_dogs[std::to_string(*id)] = json::value_from(*dog);
         }
         obj[UserKey::PLAYERS] = json_dogs;
 
@@ -246,7 +246,7 @@ StringResponse ApiHandler::RequestToAction(const StringRequest& req) {
 StringResponse ApiHandler::RequestToTick(const StringRequest& req){
     using namespace model;
         json::object obj;
-    std::chrono::milliseconds milliseconds = 0ms;
+    std::chrono::milliseconds milliseconds;
     try{
         json::object json_body = json::parse(req.body()).as_object();
         milliseconds = std::chrono::milliseconds(json_body.at(UserKey::TIME_INTERVAL).as_int64());

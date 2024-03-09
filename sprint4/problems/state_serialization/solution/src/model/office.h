@@ -1,6 +1,6 @@
 #pragma once
 #include "geom.h"
-#include "../tagged.h"
+#include "tagged.h"
 
 namespace model {
 

@@ -5,7 +5,6 @@
 #include "ser_dog.h"
 #include "ser_loot.h"
 
-
 namespace serialization {
 
     class GameSessionRepr {
@@ -13,12 +12,12 @@ namespace serialization {
         GameSessionRepr() = default;
 
         explicit GameSessionRepr(const GameSession& session):
-                map_id(*session.GetMap().GetId()),
-                base_interval_(session.GetLootTimeInterval().count()),
-                probability_(session.GetLootProbability()),
-                limit_(session.GetLimitPlayers()) {
+                id_(session.GetId()),
+                map_id(*session.GetMap().GetId()){
             for(auto& [_, dog]: session.GetDogs()){
-                dogs_.emplace_back(dog);
+                if(dog != nullptr){
+                    dogs_.emplace_back(*dog);
+                }
             }
 
             for(auto& [_, loot]: session.GetLoots()){
@@ -29,7 +28,9 @@ namespace serialization {
         [[nodiscard]] model::GameSession Restore(const model::Game& game) const {
             using Time = loot_gen::LootGenerator::TimeInterval;
             auto map = game.FindMap(Map::Id{map_id});
-            GameSession game_session(*map, loot_gen::LootGenerator{Time{base_interval_}, probability_}, limit_);
+            // Перевод из секунд в миллисекунды
+            auto ms = std::chrono::milliseconds(static_cast<size_t>(game.GetLootPeriod()*1000));
+            GameSession game_session(id_, *map, loot_gen::LootGenerator{ms, game.GetLootProbability()});
 
             for (auto& dog: dogs_) {
                 game_session.AddDog(dog.Restore());
@@ -44,19 +45,16 @@ namespace serialization {
 
         template <typename Archive>
         void serialize(Archive& ar, [[maybe_unused]] const unsigned version) {
+            ar&* id_;
             ar& map_id;
-            ar& base_interval_;
-            ar& probability_;
-            ar& limit_;
             ar& dogs_;
             ar& loots_;
         }
 
     private:
+
+        GameSession::Id id_ = GameSession::Id{0u};
         std::string map_id;
-        int64_t base_interval_{};
-        double probability_{};
-        size_t limit_{};
         std::vector<DogRepr> dogs_;
         std::vector<LootRepr> loots_;
     };

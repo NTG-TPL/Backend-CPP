@@ -109,4 +109,12 @@ void Map::AddLootType(const LootType& loot_type){
     loot_types_.push_back(loot_type);
 }
 
+/**
+ * Возвращает максимальное количество игроков на карту
+ * @return максимальное количество игроков
+ */
+size_t Map::GetLimitPlayers() const noexcept {
+    return limit_players_;
+}
+
 } // namespace model

@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <optional>
-#include "../tagged.h"
+#include "tagged.h"
 
 #include "geom.h"
 

@@ -17,7 +17,7 @@ void serialize(Archive& ar, FoundObject& obj, [[maybe_unused]] const unsigned ve
 } // namespace model
 
 namespace serialization {
-    using namespace model;
+using namespace model;
 
 class DogRepr {
 public:

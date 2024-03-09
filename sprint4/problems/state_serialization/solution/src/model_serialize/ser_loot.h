@@ -3,6 +3,7 @@
 #include "../model/loot.h"
 
 namespace serialization {
+
 using namespace model;
 class LootRepr {
 public:

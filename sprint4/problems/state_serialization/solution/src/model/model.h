@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../tagged.h"
+#include "tagged.h"
 #include "../loot_generator/loot_generator.h"
 #include "movement.h"
 #include "loot.h"

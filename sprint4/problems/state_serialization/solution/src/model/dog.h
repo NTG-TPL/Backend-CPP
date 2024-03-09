@@ -2,7 +2,7 @@
 #include <memory>
 
 #include "geom.h"
-#include "../tagged.h"
+#include "tagged.h"
 #include "movement.h"
 #include "loot.h"
 
@@ -19,7 +19,7 @@ struct FoundObject {
 
 class Dog : public Object {
 public:
-    using Id = util::Tagged<size_t, Dog>;
+    using Id = util::Tagged<uint64_t, Dog>;
     using IdHasher = util::TaggedHasher<Dog::Id>;
     using Bag = std::vector<FoundObject>;
 

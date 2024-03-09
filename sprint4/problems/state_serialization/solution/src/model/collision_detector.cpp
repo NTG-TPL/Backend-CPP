@@ -1,5 +1,4 @@
 #include "collision_detector.h"
-#include <cassert>
 
 namespace model {
 

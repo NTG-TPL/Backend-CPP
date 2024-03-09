@@ -13,7 +13,7 @@ const model::GameSession& Player::GetSession() const noexcept {
  * Получить собаку игрока
  * @return Ссылка на собаку
  */
-const model::Dog& Player::GetDog() {
+const std::shared_ptr<model::Dog>& Player::GetDog() {
     return dog_;
 }
 
@@ -23,14 +23,14 @@ const model::Dog& Player::GetDog() {
  * @param speed Скорость перемещения
  */
 void Player::DogMove(std::string_view dir, model::DimensionDouble speed){
-    dog_.Move(dir, speed);
+    dog_->Move(dir, speed);
 }
 
 /**
  * Получить собаку игрока
  * @return Константная ссылка на собаку
  */
-[[nodiscard]] const model::Dog& Player::GetDog() const noexcept{
+[[nodiscard]] const std::shared_ptr<model::Dog>& Player::GetDog() const noexcept{
     return dog_;
 }
 
@@ -39,7 +39,7 @@ void Player::DogMove(std::string_view dir, model::DimensionDouble speed){
  * @return Индекс игрока
  */
 Player::Id Player::GetId() const noexcept{
-    return Player::Id{*dog_.GetId()};
+    return Player::Id{*dog_->GetId()};
 }
 
 /**
@@ -63,6 +63,23 @@ Token PlayerTokens::AddPlayer(Player& player){
 }
 
 /**
+ * Возвращает словарь токенов и игроков
+ * @return PlayerTokens::TokenToPlayer
+ */
+const PlayerTokens::TokenToPlayer& PlayerTokens::GetTokenToPlayer() const noexcept {
+    return token_to_player_;
+}
+
+/**
+ * добавляет игрока вместе с токеном
+ * @param token Токен
+ * @param player игрок
+ */
+void PlayerTokens::AddPlayerWithToken(const app::Token& token, app::Player& player) {
+    token_to_player_.emplace(token, player);
+}
+
+/**
  * Получить Токен
  * @return Токен
  */
@@ -81,8 +98,7 @@ Token PlayerTokens::GetToken() {
  */
 std::pair<Token, Player&> Players::AddPlayer(const model::Dog::Id& id, const std::shared_ptr<model::GameSession>& session) {
     Player& player = players_.emplace_back(*session->FindDog(id), session);
-    auto Token = tokens.AddPlayer(player);
-    player_by_ids[{player.GetDog().GetId(), player.GetSession().GetMapId()}] = &player;
+    auto Token = tokens_.AddPlayer(player);
     return {Token, player};
 }
 
@@ -93,7 +109,7 @@ std::pair<Token, Player&> Players::AddPlayer(const model::Dog::Id& id, const std
  * @return Указатель на игрока
  */
 Player* Players::FindByToken(const Token& token){
-    return tokens.FindPlayer(token);
+    return tokens_.FindPlayer(token);
 }
 
 /**
@@ -103,4 +119,13 @@ Player* Players::FindByToken(const Token& token){
 const Players::PlayerList& Players::GetList() const noexcept{
     return players_;
 }
+
+/**
+ * Вернуть объект, отвечающий за хранение токенов
+ * @return PlayerTokens
+ */
+const PlayerTokens& Players::GetPlayerTokens() const noexcept {
+    return tokens_;
+}
+
 } // namespace app

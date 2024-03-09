@@ -7,6 +7,10 @@
 
 #include "../model/model.h"
 
+namespace serialization {
+    class PlayersRepr;
+}
+
 namespace app {
 namespace detail {
     struct TokenTag {};
@@ -16,32 +20,46 @@ using Token = util::Tagged<std::string, detail::TokenTag>;
 
 class Player {
 public:
-    using Id = util::Tagged<size_t, Player>;
+    using Id = util::Tagged<uint64_t , Player>;
 
-    Player(model::Dog& dog, std::shared_ptr<model::GameSession> session):
-        dog_(dog), session_(std::move(session)) {}
+    Player(std::shared_ptr<model::Dog> dog, std::shared_ptr<model::GameSession> session):
+        dog_(std::move(dog)), session_(std::move(session)) {}
     [[nodiscard]] const model::GameSession& GetSession() const noexcept;
-    [[nodiscard]] const model::Dog& GetDog();
+    [[nodiscard]] const std::shared_ptr<model::Dog>& GetDog();
     void DogMove(std::string_view dir, model::DimensionDouble speed);
-    [[nodiscard]] const model::Dog& GetDog() const noexcept;
+    [[nodiscard]] const std::shared_ptr<model::Dog>& GetDog() const noexcept;
     [[nodiscard]] Id GetId() const noexcept;
 
 private:
-    model::Dog& dog_;
+    std::shared_ptr<model::Dog> dog_;
     std::shared_ptr<model::GameSession> session_;
 };
 
 class PlayerTokens {
+    friend class serialization::PlayersRepr;
 public:
-    Player* FindPlayer(const Token& token);
-    Token AddPlayer(Player& player);
-    static inline constexpr uint8_t GetTokenLenght() noexcept{ return 32; }
-private:
-    Token GetToken();
-private:
     using TokenHasher = util::TaggedHasher<Token>;
     using TokenToPlayer = std::unordered_map<Token, Player&, TokenHasher>;
 
+    PlayerTokens() = default;
+    PlayerTokens(const PlayerTokens& other) {
+        token_to_player_ = other.token_to_player_;
+    }
+    PlayerTokens& operator=(const PlayerTokens& other) {
+        token_to_player_ = other.token_to_player_;
+        return *this;
+    }
+
+    Player* FindPlayer(const Token& token);
+    Token AddPlayer(Player& player);
+    static inline constexpr uint8_t GetTokenLenght() noexcept{ return 32; }
+    const TokenToPlayer& GetTokenToPlayer() const noexcept;
+
+private:
+    void AddPlayerWithToken(const app::Token& token, app::Player& player);
+    Token GetToken();
+
+private:
     std::random_device random_device_;
     std::mt19937_64 generator1_{[this] {
         std::uniform_int_distribution<std::mt19937_64::result_type> dist;
@@ -56,12 +74,14 @@ private:
 };
 
 class Players {
+    friend class serialization::PlayersRepr;
 public:
     using PlayerList = std::deque<Player>;
 
     std::pair<Token, Player&> AddPlayer(const model::Dog::Id& id, const std::shared_ptr<model::GameSession>& session);
     Player* FindByToken(const Token& token);
     const PlayerList& GetList() const noexcept;
+    const PlayerTokens& GetPlayerTokens() const noexcept;
 
 private:
     class Hash {
@@ -74,7 +94,6 @@ private:
         std::hash<std::string> str_hasher_;
     };
     PlayerList players_;
-    std::unordered_map<std::pair<model::Dog::Id, model::Map::Id>, Player*, Hash> player_by_ids;
-    PlayerTokens tokens;
+    PlayerTokens tokens_;
 };
 } // namespace app

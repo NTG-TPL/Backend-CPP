@@ -27,6 +27,14 @@ const GameSession::Loots& GameSession::GetLoots() const noexcept{
 }
 
 /**
+ * Возвращает id сессии
+ * @return id сессии
+ */
+GameSession::Id GameSession::GetId() const noexcept {
+    return id_;
+}
+
+/**
 * Получить количество занятых мест
 * @return Количество занятых мест
 */
@@ -61,20 +69,22 @@ bool GameSession::IsFull() const noexcept {
 /**
 * Ищет собаку по индексу
 * @param id Индекс собаки
-* @return Сырой указатель на собаку
+* @return Указатель на собаку
 */
-Dog* GameSession::FindDog(const Dog::Id& id){
-    return dogs_.contains(id) ? &dogs_.at(id) : nullptr;
+std::optional<std::shared_ptr<model::Dog>> GameSession::FindDog(const Dog::Id& id){
+    using shrd_dog = std::shared_ptr<model::Dog>;
+    return dogs_.contains(id) ? std::optional<shrd_dog>{dogs_.at(id)} : std::nullopt;
 }
 
 /**
 * Добавляет собаку в сессию (если id собаки не уникален, или сессия переполнена, то возвращает false)
 * @param dog ссылка на собаку
-* @return сырой указатель на собаку
+* @return Указатель на собаку
 */
-Dog * GameSession::AddDog(const Dog& dog) {
-    if(dogs_.size() < limit_ && !dogs_.contains(dog.GetId())){
-        return &(dogs_.emplace(dog.GetId(), dog).first)->second;
+std::shared_ptr<model::Dog> GameSession::AddDog(const model::Dog& dog) {
+    auto shrd_dog = std::make_shared<model::Dog>(dog);
+    if(dogs_.size() < limit_ && !dogs_.contains(shrd_dog->GetId())){
+        return (dogs_.emplace(shrd_dog->GetId(), std::move(shrd_dog)).first)->second;
     }
     return nullptr;
 }
@@ -85,7 +95,7 @@ Dog * GameSession::AddDog(const Dog& dog) {
  * @return ссылка на трофей
  */
 const Loot& GameSession::AddLoot(const Loot& loot) {
-    loot_id_ = (loot_id_ <= *loot.GetId()) ?  *loot.GetId() + 1 : loot_id_;
+    loot_id_ = (*loot.GetId() >= loot_id_ ) ?  *loot.GetId() + 1 : loot_id_;
     return (loots_.emplace(loot.GetId(), loot).first)->second;
 }
 
@@ -160,7 +170,7 @@ void GameSession::GenerateLoot(std::chrono::milliseconds tick, bool enable) {
  * @param current_position текущая позиция собаки
  * @param new_position потенциально новая позиция собаки
  */
-void GameSession::DetectCollisionWithRoadBorders(Dog& dog, Point2d current_position, Point2d new_position) {
+void GameSession::DetectCollisionWithRoadBorders(const std::shared_ptr<model::Dog>& dog, Point2d current_position, Point2d new_position) {
     std::optional<Road::RoadRectangle::Borders> union_borders;
     for(const auto & road : map_.GetRoads()) {
         if(road.Contains(current_position)) {
@@ -182,9 +192,9 @@ void GameSession::DetectCollisionWithRoadBorders(Dog& dog, Point2d current_posit
         new_position.y = std::min(new_position.y, union_borders->max_y);
         new_position.x = std::max(new_position.x, union_borders->min_x);
         new_position.x = std::min(new_position.x, union_borders->max_x);
-        dog.Stand();
+        dog->Stand();
     }
-    dog.SetPosition(new_position);
+    dog->SetPosition(new_position);
 }
 
 /**
@@ -193,7 +203,7 @@ void GameSession::DetectCollisionWithRoadBorders(Dog& dog, Point2d current_posit
  * @param item_gatherer Сборщик предметов
  * @param gather_by_index Словарь собак через счётчик
  */
-void GameSession::CollectingAndReturningLoot(ItemGatherer& item_gatherer, std::unordered_map<size_t, model::Dog&> gather_by_index) {
+void GameSession::CollectingAndReturningLoot(ItemGatherer& item_gatherer, std::unordered_map<size_t, std::shared_ptr<model::Dog>>& gather_by_index) {
     std::unordered_map<size_t, FoundObject> loot_numb_to_item;
     size_t loot_idx = 0;
     for (auto& [id, loot]: loots_) {
@@ -208,14 +218,14 @@ void GameSession::CollectingAndReturningLoot(ItemGatherer& item_gatherer, std::u
         auto& dog = gather_by_index.at(gatherring_event.gatherer_id);
         // Если это офис
         if (gatherring_event.item_id >= loots_.size()) {
-            dog.BagClear(); // Возвращает все предметы на базу
+            dog->BagClear(); // Возвращает все предметы на базу
             continue;
         }
 
         // Если это клад и сумка не полна, то кладёт его в сумку
-        if (loot_numb_to_item.contains(gatherring_event.item_id) && dog.GetBag().size() < map_.GetBagCapacity()) {
+        if (loot_numb_to_item.contains(gatherring_event.item_id) && dog->GetBag().size() < map_.GetBagCapacity()) {
             auto& loot = loot_numb_to_item.at(gatherring_event.item_id);
-            dog.PutToBag(loot);
+            dog->PutToBag(loot);
             loots_.erase(Loot::Id{*loot.id});
             loot_numb_to_item.erase(gatherring_event.item_id);
         }
@@ -228,16 +238,16 @@ void GameSession::CollectingAndReturningLoot(ItemGatherer& item_gatherer, std::u
 */
 void GameSession::Update(std::chrono::milliseconds tick){
     ItemGatherer item_gatherer;
-    std::unordered_map<size_t, model::Dog&> gather_by_index;
+    std::unordered_map<size_t, std::shared_ptr<model::Dog>> gather_by_index;
     size_t dog_index = 0;
 
     for (auto& [id, dog] : dogs_) {
-        if(dog.GetDirection() == Movement::STOP || (dog.GetSpeed().dx == 0 && dog.GetSpeed().dy == 0)){
+        if(dog->GetDirection() == Movement::STOP || (dog->GetSpeed().dx == 0 && dog->GetSpeed().dy == 0)){
             continue;
         }
 
-        auto position = dog.GetPosition();
-        auto speed = dog.GetSpeed();
+        auto position = dog->GetPosition();
+        auto speed = dog->GetSpeed();
 
         static constexpr const std::int32_t divider = 1000;
         double delta_seconds = static_cast<double>(tick.count())/divider;
@@ -248,7 +258,7 @@ void GameSession::Update(std::chrono::milliseconds tick){
 
         // Добавление собак в сборщик предметов для дальнейшего разрешения временных конфликтов
         gather_by_index.emplace(dog_index++, dog);
-        item_gatherer.Add(Gatherer{position, new_position, dog.GetWidth()});
+        item_gatherer.Add(Gatherer{position, new_position, dog->GetWidth()});
     }
     CollectingAndReturningLoot(item_gatherer, gather_by_index);
     GenerateLoot(tick);

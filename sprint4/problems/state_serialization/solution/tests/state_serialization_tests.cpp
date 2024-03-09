@@ -6,8 +6,7 @@
 #include <iostream>
 
 #include "../src/model/model.h"
-#include "../src/model_serialize/model_serialize.h"
-#include "../src/json/json_loader.h"
+#include "../src/serialize.h"
 
 using namespace model;
 using namespace serialization;
@@ -24,9 +23,17 @@ struct Fixture {
     OutputArchive output_archive{strm};
 };
 
+struct InitGame {
+    std::stringstream strm;
+    OutputArchive output_archive{strm};
+    fs::path test_config = "../../tests/test_config.json"s;
+    Game game = json_loader::LoadGame(test_config);
+};
+
 }  // namespace
 
 namespace model {
+
     bool operator == (const Dog& lhs, const Dog& rhs){
         return  *lhs.GetId() == *rhs.GetId() &&
                 lhs.GetSpeed() == rhs.GetSpeed() &&
@@ -162,6 +169,24 @@ struct ExampleDogs {
                                            {ExampleLoot::loot1, ExampleLoot::loot2, ExampleLoot::loot3}, Movement::DOWN, {-1, 1});
 };
 
+GameSession InitGameSession(const Game& game, const GameSession::Id& id,
+                            const Map::Id& map_id, const std::vector<Dog>& dogs,
+                            const std::vector<Loot>& loots) {
+    auto map = game.FindMap(map_id);
+    CHECK(map != nullptr);
+    auto ms = std::chrono::milliseconds(static_cast<size_t>(game.GetLootPeriod()*1000));
+    GameSession session(id, *map, loot_gen::LootGenerator{ms, game.GetLootProbability()});
+
+    for (auto& dog: dogs) {
+        session.AddDog(dog);
+    }
+
+    for (auto& loot: loots) {
+        session.AddLoot(loot);
+    }
+    return session;
+}
+
 SCENARIO_METHOD(Fixture, "Point serialization") {
     GIVEN("A point") {
         const Point2d p{10, 20};
@@ -232,23 +257,14 @@ SCENARIO_METHOD(Fixture, "Loot Serialization") {
     }
 }
 
-
-SCENARIO_METHOD(Fixture, "GameSession Serialization") {
-    fs::path test_config = "../../tests/test_config.json"s;
-    REQUIRE(fs::exists(test_config));
-    Game game = json_loader::LoadGame(test_config);
-
+SCENARIO_METHOD(InitGame, "GameSession Serialization") {
     GIVEN("a session") {
-        const auto session = [&game] {
+        const auto session = [&] {
             auto map = game.FindMap(Map::Id{"map1"});
             CHECK(map != nullptr);
-            GameSession session(*map, loot_gen::LootGenerator{30ms, 0.5}, 1000);
-            session.AddDog(ExampleDogs::dog1);
-            session.AddDog(ExampleDogs::dog2);
-            session.AddDog(ExampleDogs::dog3);
-            session.AddLoot(ExampleLoot::loot4);
-            session.AddLoot(ExampleLoot::loot5);
-            session.AddLoot(ExampleLoot::loot6);
+            GameSession session = InitGameSession(game, GameSession::Id{1}, Map::Id{"map1"},
+                                                  std::vector<Dog>{ExampleDogs::dog1, ExampleDogs::dog2, ExampleDogs::dog3},
+                                                  std::vector<Loot>{ExampleLoot::loot4, ExampleLoot::loot5, ExampleLoot::loot6});
             return session;
         }();
 
@@ -266,6 +282,7 @@ SCENARIO_METHOD(Fixture, "GameSession Serialization") {
                 const auto restored = repr.Restore(game);
 
 
+                CHECK(restored.GetId() == game_session.GetId());
                 CHECK(restored.GetMapId() == game_session.GetMapId());
                 CHECK(restored.GetLimitPlayers() == game_session.GetLimitPlayers());
                 CHECK(restored.GetLootTimeInterval() == game_session.GetLootTimeInterval());
@@ -275,7 +292,7 @@ SCENARIO_METHOD(Fixture, "GameSession Serialization") {
                 auto dogs = game_session.GetDogs();
                 CHECK(dogs_restored.size() == dogs.size());
                 for (auto& [id, dog]: dogs_restored) {
-                    CHECK_THAT(dog, CommonMatcher(dogs.at(id)));
+                    CHECK_THAT(*dog, CommonMatcher(*dogs.at(id)));
                 }
 
                 auto loots_restored = restored.GetLoots();

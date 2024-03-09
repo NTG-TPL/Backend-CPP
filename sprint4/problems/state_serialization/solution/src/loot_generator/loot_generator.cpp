@@ -1,6 +1,5 @@
 #include "loot_generator.h"
 
-#include <algorithm>
 #include <cmath>
 
 namespace loot_gen {

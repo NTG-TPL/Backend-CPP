@@ -66,10 +66,8 @@ set(MODEL
 		src/model/collision_detector.cpp
 		src/model/collision_detector.h
 		src/model/item_gatherer.h
-)
-
-set(MODEL_SERIALIZE
-	src/model_serialize/ser_dog.h
+		src/model/tagged.h
+		src/model/sdk.h
 )
 
 set(HANDLER
@@ -89,6 +87,7 @@ set(HANDLER
 set(LOGGER
 		src/logger/logger.cpp
 		src/logger/logger.h
+        src/serialize.h
 )
 
 set(APPLICATION
@@ -96,11 +95,25 @@ set(APPLICATION
 		src/app/application.h
 		src/app/players.cpp
 		src/app/players.h
-		src/model_serialize/ser_game_session.h
-		src/model_serialize/ser_player.h
-		src/model_serialize/ser_geom.h
+)
+
+set(MODEL_SERIALIZE
 		src/model_serialize/model_serialize.h
+		src/model_serialize/ser_dog.h
+		src/model_serialize/ser_game_session.h
+		src/model_serialize/ser_geom.h
 		src/model_serialize/ser_loot.h
+		src/model_serialize/ser_game.h
+)
+
+set(APP_SERIALIZE
+		src/app_serialize/ser_players.h
+)
+
+set(SERIALIZE
+	src/serialize.h
+	${MODEL_SERIALIZE}
+	${APP_SERIALIZE}
 )
 
 set(TESTS
@@ -108,7 +121,6 @@ set(TESTS
 		tests/loot_generator_tests.cpp
 		tests/model_tests.cpp
 		tests/state_serialization_tests.cpp
-		tests/utils_tests.h
 )
 
 include(CTest)
@@ -124,13 +136,10 @@ add_library(${MODEL_LIB} STATIC
 		${LOOT}
 		${MODEL}
 		${MODEL_SERIALIZE}
-		src/tagged.h
-		src/sdk.h
 )
 
 target_include_directories(${MODEL_LIB} PUBLIC ${BOOST_LIB})
 target_link_libraries(${MODEL_LIB} PUBLIC ${BOOST_LIB} ${ZLIB_LIB})
-
 
 add_executable(${PROJECT_NAME}
 		src/main.cpp
@@ -141,12 +150,17 @@ add_executable(${PROJECT_NAME}
 		${HANDLER}
 		${LOGGER}
 		${APPLICATION}
+		${SERIALIZE}
 )
 
 set(GAME_SERVER_TESTS game_server_tests)
-add_executable(${GAME_SERVER_TESTS} ${TESTS} ${JSON})
+add_executable(${GAME_SERVER_TESTS}
+		${TESTS}
+		${JSON}
+		${APPLICATION}
+		${SERIALIZE}
+)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${MODEL_LIB})
 target_link_libraries(${GAME_SERVER_TESTS} PRIVATE ${CATCH2_LIB} ${MODEL_LIB})
-
 catch_discover_tests(${GAME_SERVER_TESTS})

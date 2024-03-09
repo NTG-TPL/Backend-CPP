@@ -6,28 +6,30 @@
 #include "dog.h"
 #include "../loot_generator/loot_generator.h"
 #include "item_gatherer.h"
+
 namespace model {
 
 class GameSession {
 public:
-    using Dogs = std::unordered_map<Dog::Id, Dog, Dog::IdHasher>;
+    using Id = util::Tagged<uint64_t, GameSession>;
+    using IdHasher = util::TaggedHasher<Id>;
+    using Dogs = std::unordered_map<Dog::Id, std::shared_ptr<model::Dog>, Dog::IdHasher>;
     using Loots = std::unordered_map<Loot::Id, Loot, Loot::IdHasher>;
 
-    GameSession(const Map& map, loot_gen::LootGenerator gen):
-            map_(map), loot_generator_(std::move(gen)), limit_(100) {}
-    GameSession(const Map& map, loot_gen::LootGenerator gen, size_t limit):
-            map_(map), loot_generator_(std::move(gen)), limit_(limit) {}
+    GameSession(Id id, const Map& map, loot_gen::LootGenerator gen):
+            id_(id), map_(map), loot_generator_(std::move(gen)), limit_(map.GetLimitPlayers()) {}
+
     const Map::Id& GetMapId() const noexcept;
     const Map& GetMap() const noexcept;
     const Loots& GetLoots() const noexcept;
+    Id GetId() const noexcept;
 
     size_t GetActivityPlayers() const noexcept;
     size_t GetLimitPlayers() const noexcept;
     size_t AmountAvailableSeats() const noexcept;
     bool IsFull() const noexcept;
-    Dog* FindDog(const Dog::Id& id);
-    Dog* AddDog(const Dog& dog);
-    const Loot& AddLoot(const Loot& loot);
+    std::optional<std::shared_ptr<model::Dog>> FindDog(const Dog::Id& id);
+    std::shared_ptr<model::Dog> AddDog(const model::Dog& dog);
     size_t EraseDog(const Dog::Id& id);
     [[nodiscard]] const Dogs& GetDogs() const noexcept;
     [[nodiscard]] loot_gen::LootGenerator::TimeInterval GetLootTimeInterval() const noexcept;
@@ -36,11 +38,14 @@ public:
     Point2d GenerateNewPosition(bool enable = true) const;
     void GenerateLoot(std::chrono::milliseconds tick, bool enable = true);
     void Update(std::chrono::milliseconds tick);
+    const Loot& AddLoot(const Loot& loot);
 
 private:
-    void DetectCollisionWithRoadBorders(Dog& dog, Point2d current_position, Point2d new_position);
-    void CollectingAndReturningLoot(ItemGatherer& item_gatherer, std::unordered_map<size_t, model::Dog&> gather_by_index);
+    void DetectCollisionWithRoadBorders(const std::shared_ptr<model::Dog>& dog, Point2d current_position, Point2d new_position);
+    void CollectingAndReturningLoot(ItemGatherer& item_gatherer, std::unordered_map<size_t, std::shared_ptr<model::Dog>>& gather_by_index);
+
 private:
+    Id id_;
     const Map& map_;
     loot_gen::LootGenerator loot_generator_;
     size_t limit_;
