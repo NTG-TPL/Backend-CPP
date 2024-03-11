@@ -67,7 +67,7 @@ set(MODEL
 		src/model/collision_detector.h
 		src/model/item_gatherer.h
 		src/model/tagged.h
-		src/model/sdk.h
+		src/sdk.h
 )
 
 set(HANDLER
@@ -95,6 +95,11 @@ set(APPLICATION
 		src/app/application.h
 		src/app/players.cpp
 		src/app/players.h
+		src/app/application_listener.h
+)
+
+set(INFRASTRUCURE
+		src/infrastructure/serializing_listener.h
 )
 
 set(MODEL_SERIALIZE
@@ -108,6 +113,7 @@ set(MODEL_SERIALIZE
 
 set(APP_SERIALIZE
 		src/app_serialize/ser_players.h
+		src/app_serialize/ser_app.h
 )
 
 set(SERIALIZE
@@ -151,6 +157,7 @@ add_executable(${PROJECT_NAME}
 		${LOGGER}
 		${APPLICATION}
 		${SERIALIZE}
+		${INFRASTRUCURE}
 )
 
 set(GAME_SERVER_TESTS game_server_tests)
@@ -159,6 +166,7 @@ add_executable(${GAME_SERVER_TESTS}
 		${JSON}
 		${APPLICATION}
 		${SERIALIZE}
+		${LOGGER}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${MODEL_LIB})

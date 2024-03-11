@@ -45,10 +45,10 @@ Player::Id Player::GetId() const noexcept{
 /**
  * Найти игрока по токену
  * @param token Токен игрока
- * @return Сырой указатель на константу Player
+ * @return Указатель на константу Player
  */
-Player* PlayerTokens::FindPlayer(const Token& token) {
-    return token_to_player_.contains(token) ? &token_to_player_.at(token) : nullptr;
+std::shared_ptr<Player> PlayerTokens::FindPlayer(const Token& token) {
+    return token_to_player_.contains(token) ? token_to_player_.at(token) : nullptr;
 }
 
 /**
@@ -56,9 +56,9 @@ Player* PlayerTokens::FindPlayer(const Token& token) {
  * @param player ссылка на игрока
  * @return Токен игрока
  */
-Token PlayerTokens::AddPlayer(Player& player){
+Token PlayerTokens::AddPlayer(const Player& player){
     Token token{GetToken()};
-    token_to_player_.emplace(token, player);
+    token_to_player_.emplace(token, std::make_shared<Player>(player));
     return token;
 }
 
@@ -75,8 +75,8 @@ const PlayerTokens::TokenToPlayer& PlayerTokens::GetTokenToPlayer() const noexce
  * @param token Токен
  * @param player игрок
  */
-void PlayerTokens::AddPlayerWithToken(const app::Token& token, app::Player& player) {
-    token_to_player_.emplace(token, player);
+void PlayerTokens::AddPlayerWithToken(const app::Token& token, const app::Player& player) {
+    token_to_player_.emplace(token, std::make_shared<app::Player>(player));
 }
 
 /**
@@ -108,7 +108,7 @@ std::pair<Token, Player&> Players::AddPlayer(const model::Dog::Id& id, const std
  * @param map_id индекс карты
  * @return Указатель на игрока
  */
-Player* Players::FindByToken(const Token& token){
+std::shared_ptr<Player> Players::FindByToken(const Token& token){
     return tokens_.FindPlayer(token);
 }
 

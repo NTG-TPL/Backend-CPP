@@ -39,7 +39,7 @@ class PlayerTokens {
     friend class serialization::PlayersRepr;
 public:
     using TokenHasher = util::TaggedHasher<Token>;
-    using TokenToPlayer = std::unordered_map<Token, Player&, TokenHasher>;
+    using TokenToPlayer = std::unordered_map<Token, std::shared_ptr<Player>, TokenHasher>;
 
     PlayerTokens() = default;
     PlayerTokens(const PlayerTokens& other) {
@@ -50,13 +50,13 @@ public:
         return *this;
     }
 
-    Player* FindPlayer(const Token& token);
-    Token AddPlayer(Player& player);
+    std::shared_ptr<Player> FindPlayer(const Token& token);
+    Token AddPlayer(const Player& player);
     static inline constexpr uint8_t GetTokenLenght() noexcept{ return 32; }
     const TokenToPlayer& GetTokenToPlayer() const noexcept;
 
 private:
-    void AddPlayerWithToken(const app::Token& token, app::Player& player);
+    void AddPlayerWithToken(const app::Token& token, const app::Player& player);
     Token GetToken();
 
 private:
@@ -79,7 +79,7 @@ public:
     using PlayerList = std::deque<Player>;
 
     std::pair<Token, Player&> AddPlayer(const model::Dog::Id& id, const std::shared_ptr<model::GameSession>& session);
-    Player* FindByToken(const Token& token);
+    std::shared_ptr<Player> FindByToken(const Token& token);
     const PlayerList& GetList() const noexcept;
     const PlayerTokens& GetPlayerTokens() const noexcept;
 

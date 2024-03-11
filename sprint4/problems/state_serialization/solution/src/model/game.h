@@ -15,14 +15,14 @@ class Game {
     // Класс для сериализации объявлен дружественным, чтобы не портить консистентность класса
     friend class serialization::GameRepr;
 public:
-    using Maps = std::vector<Map>;
+    using Maps = std::vector<std::shared_ptr<Map>>;
     using Sessions = std::vector<std::shared_ptr<GameSession>>;
     using IndexToSession = std::unordered_map<GameSession::Id, size_t, GameSession::IdHasher>;
     using FullnessToSessionIndex = std::map<size_t, size_t, std::greater<>>;
 
     void AddMap(const Map& map);
     const Maps& GetMaps() const noexcept;
-    const Map* FindMap(const Map::Id& id) const noexcept;
+    std::shared_ptr<const Map> FindMap(const Map::Id& id) const noexcept;
     std::shared_ptr<GameSession> UpdateSessionFullness(GameSession::Id index, const GameSession& session);
     std::pair<GameSession::Id, std::shared_ptr<GameSession>>  CreateFreeSession(const Map::Id& map_id);
     std::optional<std::pair<GameSession::Id, std::shared_ptr<GameSession>>> ExtractFreeSession(const Map::Id& map_id);
@@ -34,7 +34,7 @@ public:
     std::shared_ptr<GameSession> FindSession(GameSession::Id id) const noexcept;
 
 private:
-    void AddSession(const std::shared_ptr<GameSession>& session);
+    void AddSession(const GameSession& session);
     void AddFreeSession(const Map::Id& id);
 
 private:

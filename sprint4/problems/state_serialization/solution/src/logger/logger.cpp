@@ -23,6 +23,11 @@ void Logger::LogExit(const std::exception& ex) {
     BOOST_LOG_TRIVIAL(error) << boost::log::add_value(additional_data, obj) << "server exited"sv;
 }
 
+void Logger::LogStart(const net::ip::address& address, int port) {
+    boost::json::value js_port_address{{"port"s, port}, {"address"s, address.to_string()}};
+    LogInfo(js_port_address, "server started"sv);
+}
+
 /**
  * Логирование исключений
  * @param ec исключение
@@ -33,6 +38,15 @@ void Logger::LogError(const boost::system::error_code& ec, const std::string_vie
                                {"text", ec.message()},
                                {"where", where}};
     BOOST_LOG_TRIVIAL(error) << boost::log::add_value(additional_data, obj) << "error"sv;
+}
+
+/**
+ * Логирование сообщения
+ * @param input_data данные
+ * @param message сообщение
+ */
+void Logger::LogInfo(boost::json::value const& input_data, std::string_view message) {
+    BOOST_LOG_TRIVIAL(info) << logging::add_value(additional_data, input_data) << message;
 }
 
 /**

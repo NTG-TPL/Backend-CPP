@@ -20,6 +20,7 @@
 namespace server_logging {
 namespace json = boost::json;
 namespace logging = boost::log;
+namespace net = boost::asio;
 
 BOOST_LOG_ATTRIBUTE_KEYWORD(additional_data, "AdditionalData", boost::json::value)
 BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
@@ -31,7 +32,10 @@ public:
     static void Init();
     static void LogExit(int code);
     static void LogExit(const std::exception& ex);
+    static void LogStart(const net::ip::address& address, int port);
     static void LogError(const boost::system::error_code& ec, std::string_view where);
+    static void LogInfo(boost::json::value const& data, std::string_view message);
+
 
     Logger() = default;
     Logger(const Logger&) = delete;

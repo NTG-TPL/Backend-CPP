@@ -1,8 +1,7 @@
-#include "model/sdk.h"
+#include "sdk.h"
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/signal_set.hpp>
-#include <boost/program_options.hpp>
 
 #include <iostream>
 #include <thread>
@@ -12,6 +11,7 @@
 #include "request_handler/ticker.h"
 #include "logger/logger.h"
 #include "parse/parse.h"
+#include "infrastructure/serializing_listener.h"
 
 using namespace std::literals;
 namespace net = boost::asio;
@@ -36,11 +36,6 @@ void RunWorkers(unsigned num_threads, const Fn& fn) {
 
 const std::chrono::milliseconds DEFAULT_TICK = 50ms;
 
-void ServerIsRunning(const boost::asio::ip::tcp::endpoint& endpoint, const std::string& text){
-    boost::json::value js_port_address{{"port"s, endpoint.port()}, {"address"s, endpoint.address().to_string()}};
-    BOOST_LOG_TRIVIAL(info) << boost::log::add_value(server_logging::additional_data, js_port_address) << text;
-}
-
 int main(int argc, const char* argv[]) {
 
     parse::Args args;
@@ -63,6 +58,10 @@ int main(int argc, const char* argv[]) {
         fs::path config_file = args.config;
         fs::path static_files_root = args.www_root;
         app::Application app(config_file);
+        infrastructure::SerializingListener listener(app, args.state_file,
+                                                     std::chrono::milliseconds{args.save_state_period});
+        app.SetApplicationListener(std::make_shared<infrastructure::SerializingListener>(listener));
+        listener.Load(config_file);
 
         // 2. Инициализируем io_context
         const unsigned num_threads = std::thread::hardware_concurrency();
@@ -73,7 +72,7 @@ int main(int argc, const char* argv[]) {
         std::shared_ptr<http_handler::Ticker> ticker;
         if(!args.tick_period.has_value()) {
             ticker = std::make_shared<http_handler::Ticker>(api_strand, DEFAULT_TICK, [&app](std::chrono::milliseconds delta) {
-                app.Update(delta);
+                app.Tick(delta);
             });
             ticker->Start();
         }else {
@@ -90,8 +89,7 @@ int main(int argc, const char* argv[]) {
         });
 
         // 4. Создаём обработчик HTTP-запросов и связываем его с приложением
-        auto handler = std::make_shared<http_handler::RequestHandler>(
-                static_files_root, api_strand, app);
+        auto handler = std::make_shared<http_handler::RequestHandler>(static_files_root, api_strand, app);
         // 4.1 Использование паттерна 'Декоратор', чтобы залогировать получение запросов и формирование ответов
         server_logging::LoggingRequestHandler logging_handler{(*handler)};
 
@@ -104,12 +102,13 @@ int main(int argc, const char* argv[]) {
         });
 
         // Эта надпись сообщает тестам о том, что сервер запущен и готов обрабатывать запросы
-        ServerIsRunning({address, port}, "server started"s);
+        server_logging::Logger::LogStart(address, port);
 
         // 6. Запускаем обработку асинхронных операций
         RunWorkers(std::max(1u, num_threads), [&ioc] {
             ioc.run();
         });
+        listener.Save();
     } catch (const std::exception& ex) {
         server_logging::Logger::LogExit(ex);
         return EXIT_FAILURE;

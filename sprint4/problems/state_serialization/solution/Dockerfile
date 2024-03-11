@@ -19,7 +19,6 @@ COPY ./src /app/src
 COPY ./tests /app/tests
 COPY CMakeLists.txt /app/
 
-
 # Сборка проекта
 RUN cd /app/build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
@@ -37,5 +36,5 @@ COPY --from=build /app/build/bin/game_server /app/
 COPY ./data /app/data
 COPY ./static /app/static
 
-# Запускаем игровой сервер (точка входа /app/game_server с параметром /app/data/config.json)
-ENTRYPOINT ["/app/game_server", "--randomize-spawn-points", "--config-file" ,"/app/data/config.json", "--www-root" ,"/app/static"]
+# Запускаем игровой сервер (точка входа /app/game_server с параметроми)
+ENTRYPOINT ["/app/game_server", "--randomize-spawn-points", "--config-file" ,"/app/data/config.json", "--www-root" ,"/app/static", "--save-state-period", "1000", "--state-file", "/tmp/volume/state"]

@@ -114,7 +114,7 @@ void tag_invoke(value_from_tag, value& json_value, Map const& map) {
 void tag_invoke(boost::json::value_from_tag, boost::json::value& json_value, Game::Maps const& maps){
     array arr;
     for (const auto& map : maps) {
-        value value = {{MapKey::ID, *map.GetId()}, {MapKey::NAME, map.GetName()}};
+        value value = {{MapKey::ID, *map->GetId()}, {MapKey::NAME, map->GetName()}};
         arr.push_back(value);
     }
     json_value = std::move(arr);

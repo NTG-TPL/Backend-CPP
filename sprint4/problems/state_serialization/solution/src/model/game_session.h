@@ -16,11 +16,11 @@ public:
     using Dogs = std::unordered_map<Dog::Id, std::shared_ptr<model::Dog>, Dog::IdHasher>;
     using Loots = std::unordered_map<Loot::Id, Loot, Loot::IdHasher>;
 
-    GameSession(Id id, const Map& map, loot_gen::LootGenerator gen):
-            id_(id), map_(map), loot_generator_(std::move(gen)), limit_(map.GetLimitPlayers()) {}
+    GameSession(Id id, std::shared_ptr<const Map> map, loot_gen::LootGenerator gen):
+            id_(id), map_(std::move(map)), loot_generator_(std::move(gen)), limit_(map_->GetLimitPlayers()) {}
 
     const Map::Id& GetMapId() const noexcept;
-    const Map& GetMap() const noexcept;
+    std::shared_ptr<const Map> GetMap() const noexcept;
     const Loots& GetLoots() const noexcept;
     Id GetId() const noexcept;
 
@@ -46,7 +46,7 @@ private:
 
 private:
     Id id_;
-    const Map& map_;
+    std::shared_ptr<const Map> map_;
     loot_gen::LootGenerator loot_generator_;
     size_t limit_;
     Dogs dogs_;

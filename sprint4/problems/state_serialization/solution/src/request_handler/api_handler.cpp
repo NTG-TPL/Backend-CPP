@@ -222,18 +222,15 @@ StringResponse ApiHandler::RequestToState(const StringRequest& req) {
 
 StringResponse ApiHandler::RequestToAction(const StringRequest& req) {
     using namespace model;
-
     return ExecuteAuthorized(req, [&req](app::Player &player) {
         json::object obj;
-        auto& map = player.GetSession().GetMap();
-
+        auto map = player.GetSession().GetMap();
         try{
             json::object json_body = json::parse(req.body()).as_object();
-            player.DogMove(json_body.at(UserKey::MOVE).as_string(), map.GetDogSpeed());
+            player.DogMove(json_body.at(UserKey::MOVE).as_string(), map->GetDogSpeed());
         } catch (...) {
             return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_ACTION, CacheControl::NO_CACHE );
         }
-
         return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
     });
 }
@@ -255,10 +252,10 @@ StringResponse ApiHandler::RequestToTick(const StringRequest& req){
     }
 
     try {
-        app_.Update(milliseconds);
+        app_.Tick(milliseconds);
     } catch (const std::exception& ex) {
         std::cerr << ex.what() << std::endl;
-        throw std::runtime_error("Update error");
+        throw std::runtime_error("OnTick error");
     }
 //  auto& players = app_.GetPlayers();
 //  json::object json_dogs;

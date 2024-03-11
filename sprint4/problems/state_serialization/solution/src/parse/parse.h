@@ -19,7 +19,7 @@ struct Args {
     std::string www_root;
     bool randomize_spawn = false;
     std::string state_file;
-    unsigned int save_state_period{0};
+    uint32_t save_state_period{0};
 };
 
 /**
@@ -33,15 +33,15 @@ struct Args {
 
     po::options_description desc{"All options"s};
     Args args;
-    int32_t tick_period = 0;
+    uint32_t tick_period = 0;
     desc.add_options()
             ("help,h", "produce help message")
-            ("tick-period,t", po::value<int32_t>(&tick_period)->value_name("milliseconds"), "set tick period")
+            ("tick-period,t", po::value<uint32_t>(&tick_period)->value_name("milliseconds"), "set tick period")
             ("config-file,c", po::value(&args.config)->value_name("file"), "set config file path")
             ("www-root,w", po::value(&args.www_root)->value_name("directory path"), "set static files root")
             ("randomize-spawn-points", "spawn dogs at random positions")
             ("state-file", po::value(&args.state_file)->value_name("file"), "set game save file")
-            ("save-state-period", po::value<unsigned int>(&args.save_state_period)->value_name("milliseconds"), "set period for autosave");
+            ("save-state-period", po::value<uint32_t>(&args.save_state_period)->value_name("milliseconds"), "set period for autosave");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

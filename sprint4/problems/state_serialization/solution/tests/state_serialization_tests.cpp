@@ -4,9 +4,11 @@
 #include <catch2/matchers/catch_matchers_contains.hpp>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 #include "../src/model/model.h"
 #include "../src/serialize.h"
+#include "../src/infrastructure/serializing_listener.h"
 
 using namespace model;
 using namespace serialization;
@@ -30,6 +32,16 @@ struct InitGame {
     Game game = json_loader::LoadGame(test_config);
 };
 
+struct ForSerializingListener {
+    std::chrono::milliseconds tick_period = 10ms;
+    std::stringstream strm;
+    OutputArchive output_archive{strm};
+    fs::path test_config = "../../tests/test_config.json"s;
+    fs::path state_save_test = "../../tests/state.save"s;
+    std::chrono::milliseconds save_period = tick_period;
+};
+
+
 }  // namespace
 
 namespace model {
@@ -51,6 +63,83 @@ namespace model {
                 lhs.GetPosition() == rhs.GetPosition() &&
                 lhs.GetValue() == rhs.GetValue() &&
                 lhs.GetWidth() == rhs.GetWidth();
+    }
+
+    bool operator == (const GameSession& lhs, const GameSession& rhs){
+        const auto& lhs_dogs = lhs.GetDogs();
+        const auto& rhs_dogs = rhs.GetDogs();
+        const auto& lhs_loots = lhs.GetLoots();
+        const auto& rhs_loots = rhs.GetLoots();
+
+        bool check = *lhs.GetId() == *rhs.GetId() &&
+                     *lhs.GetMapId() == *rhs.GetMapId() &&
+                     lhs.GetLimitPlayers() == rhs.GetLimitPlayers() &&
+                     lhs.GetLootTimeInterval() == rhs.GetLootTimeInterval() &&
+                     lhs.GetLootProbability() == rhs.GetLootProbability() &&
+                     lhs_dogs.size() == rhs_dogs.size() &&
+                     lhs_loots.size() == rhs_loots.size();
+
+        if(!check) {
+            return false;
+        }
+
+        for (auto& [id, dog]: lhs_dogs) {
+            if(!(*dog == *rhs_dogs.at(id))){
+                return false;
+            }
+        }
+
+        for (auto& [id, loot]: lhs_loots) {
+            if(!(loot == rhs_loots.at(id))){
+                return false;
+            }
+        }
+        return check;
+    }
+
+    bool operator == (const Game& lhs, const Game& rhs){
+        const auto& lhs_session = lhs.GetSessions();
+        const auto& rhs_session = rhs.GetSessions();
+
+        bool check = lhs.GetLootProbability() == rhs.GetLootProbability() &&
+                lhs.GetLootPeriod() == rhs.GetLootPeriod() &&
+                lhs_session.size() == rhs_session.size();
+
+        if(!check){
+            return false;
+        }
+
+        return std::equal(lhs_session.begin(), lhs_session.end(), rhs_session.begin(), rhs_session.end(), [](auto& lhs, auto& rhs){
+            return ((lhs == nullptr) && (rhs == nullptr)) || ( ((lhs != nullptr) && (rhs != nullptr)) && (*lhs == *rhs) );
+        });
+    }
+
+    bool operator == (const app::Player& lhs, const app::Player& rhs) {
+        using namespace app;
+
+        return *lhs.GetId() == *rhs.GetId() &&
+                (*lhs.GetDog()->GetId() == *rhs.GetDog()->GetId()) &&
+                (*lhs.GetSession().GetId() == *rhs.GetSession().GetId());
+    }
+
+
+    bool operator == (const app::Players& lhs, const app::Players& rhs) {
+        using namespace app;
+
+        const auto& lhs_tokens = lhs.GetPlayerTokens().GetTokenToPlayer(),
+                    rhs_tokens = rhs.GetPlayerTokens().GetTokenToPlayer();
+        const auto& lhs_player_list = lhs.GetList();
+        const auto& rhs_player_list = rhs.GetList();
+
+        if( (lhs_player_list.size() != rhs_player_list.size()) ||
+            (lhs_tokens.size() != rhs_tokens.size()) ||
+            (lhs_player_list.size() != lhs_tokens.size())){
+            return false;
+        }
+
+        return std::ranges::all_of(lhs_tokens.cbegin(), lhs_tokens.cend(), [&rhs_tokens](const auto& el) {
+            return rhs_tokens.contains(el.first) && (*rhs_tokens.at(el.first) == *el.second);
+        });
     }
 
     template<typename T>
@@ -89,6 +178,80 @@ namespace model {
                    << " pos " << value.GetPosition() << ','
                    << " value " << value.GetValue() << ','
                    << " width " << value.GetWidth();
+    }
+
+    std::ostream& operator << (std::ostream& out, GameSession const& value) {
+        out << "(" << "id " << *value.GetId() << ','
+                   << " mapId " << *value.GetMapId() << ','
+                   << " probability " << value.GetLootProbability() << ','
+                   << " time_interval (ms) " << value.GetLootTimeInterval().count() << ','
+                   << " limits " << value.GetLimitPlayers() << ','
+                   << " dogs: ";
+
+        const auto& dogs = value.GetDogs();
+        out << "size " << dogs.size() << " {";
+        for(const auto& [_, dog]: dogs){
+            if(dog != nullptr){
+                out << *dog;
+            }else {
+                out << "nullptr";
+            }
+            out << " ";
+        }
+        out << "}, ";
+
+        out << "loots: ";
+        const auto& loots = value.GetLoots();
+        out << "size " << loots.size() << " {";
+        for(const auto& [_, loot]: loots) {
+            out << loot << " ";
+        }
+        out << "})\n";
+        return out;
+    }
+
+    std::ostream& operator << (std::ostream& out, Game const& value) {
+        out << "( probability " << value.GetLootProbability() << ','
+            << " period (ms) " << value.GetLootPeriod() << ','
+            << " sessions: ";
+
+        auto sessions =  value.GetSessions();
+        out << "size " << sessions.size() << "{";
+        for (auto& session: sessions) {
+            if(session != nullptr){
+                out << *session;
+            }else {
+                out << "nullptr";
+            }
+            out << " ";
+        }
+        out << "})\n";
+        return out;
+    }
+
+    std::ostream& operator << (std::ostream& out, app::Player const& value) {
+        return out << "( id " << *value.GetId() << ','
+            << " dog_id " << *value.GetDog()->GetId() << ','
+            << " session_id " << *value.GetSession().GetId();
+    }
+
+    std::ostream& operator << (std::ostream& out, app::Players const& value) {
+        using namespace app;
+
+        const auto& tokens = value.GetPlayerTokens().GetTokenToPlayer();
+        const auto& player_list = value.GetList();
+
+        out << "(" << " size player list: " << player_list.size()
+            << " size tokens: " << tokens.size()
+            << " tokens list : ";
+
+        out << "(";
+        for (auto& [token, player]: tokens) {
+            out << "{ token " << *token
+                << " player " << player << " }";
+        }
+        out << ")";
+        return out;
     }
 }
 
@@ -175,7 +338,7 @@ GameSession InitGameSession(const Game& game, const GameSession::Id& id,
     auto map = game.FindMap(map_id);
     CHECK(map != nullptr);
     auto ms = std::chrono::milliseconds(static_cast<size_t>(game.GetLootPeriod()*1000));
-    GameSession session(id, *map, loot_gen::LootGenerator{ms, game.GetLootProbability()});
+    GameSession session(id, map, loot_gen::LootGenerator{ms, game.GetLootProbability()});
 
     for (auto& dog: dogs) {
         session.AddDog(dog);
@@ -268,7 +431,7 @@ SCENARIO_METHOD(InitGame, "GameSession Serialization") {
             return session;
         }();
 
-        WHEN("loot is serialized") {
+        WHEN("session is serialized") {
             const GameSession& game_session = session;
             {
                 serialization::GameSessionRepr repr{game_session};
@@ -281,26 +444,113 @@ SCENARIO_METHOD(InitGame, "GameSession Serialization") {
                 input_archive >> repr;
                 const auto restored = repr.Restore(game);
 
+                CHECK_THAT(restored, CommonMatcher(game_session));
+            }
+        }
+    }
+}
 
-                CHECK(restored.GetId() == game_session.GetId());
-                CHECK(restored.GetMapId() == game_session.GetMapId());
-                CHECK(restored.GetLimitPlayers() == game_session.GetLimitPlayers());
-                CHECK(restored.GetLootTimeInterval() == game_session.GetLootTimeInterval());
-                CHECK(restored.GetLootProbability() == game_session.GetLootProbability());
+SCENARIO_METHOD(InitGame, "Game Serialization") {
+    auto local_game = game;
+    GIVEN("a game") {
+        auto create_session_and_add_dog = [&](std::size_t dog_id, const std::string& name, const std::string& map_id){
+            auto [current_index, session] = local_game.CreateFreeSession(Map::Id{map_id}); // создаёт пустую сессию
+            session->AddDog({Dog::Id{dog_id}, name, static_cast<Point2d>(session->GenerateNewPosition(true))}); // добавляет в сессию собаку
+            local_game.UpdateSessionFullness(current_index, *session); // обновляет порядок сессий относительно заполненности
+        };
 
-                auto dogs_restored = restored.GetDogs();
-                auto dogs = game_session.GetDogs();
-                CHECK(dogs_restored.size() == dogs.size());
-                for (auto& [id, dog]: dogs_restored) {
-                    CHECK_THAT(*dog, CommonMatcher(*dogs.at(id)));
-                }
+        WHEN("game is serialized") {
+            create_session_and_add_dog(1, "Тузик1", "map1");
+            create_session_and_add_dog(2, "Шарик1", "map1");
+            create_session_and_add_dog(3, "Вася1", "map1");
+            create_session_and_add_dog(4, "Тузик3", "map3");
+            create_session_and_add_dog(5, "Шарик3", "map3");
+            create_session_and_add_dog(6, "Вася3", "map3");
+            {
+                serialization::GameRepr repr(local_game);
+                output_archive << repr;
+            }
 
-                auto loots_restored = restored.GetLoots();
-                const auto& loots = game_session.GetLoots();
-                CHECK(loots_restored.size() == loots.size());
-                for (auto& [id, loot]: loots_restored) {
-                    CHECK_THAT(loot, CommonMatcher(loots_restored.at(id)));
-                }
+            THEN("it can be deserialized") {
+                InputArchive input_archive{strm};
+                serialization::GameRepr repr;
+                input_archive >> repr;
+                const auto restored = repr.Restore(test_config);
+
+                CHECK_THAT(restored, CommonMatcher(local_game));
+            }
+        }
+    }
+}
+
+SCENARIO_METHOD(InitGame, "Application Serialization") {
+    using namespace app;
+    GIVEN("a app") {
+        const auto app = [&] {
+            Application application(test_config);
+            application.JoinGame(Map::Id{"map1"}, "Вася1"s);
+            application.JoinGame(Map::Id{"map1"}, "Шарик1"s);
+            application.JoinGame(Map::Id{"map1"}, "Тузик1"s);
+            application.JoinGame(Map::Id{"map3"}, "Вася3"s);
+            application.JoinGame(Map::Id{"map3"}, "Шарик3"s);
+            application.JoinGame(Map::Id{"map3"}, "Тузик3"s);
+            application.JoinGame(Map::Id{"town"}, "ВасяT"s);
+            application.JoinGame(Map::Id{"town"}, "ШарикT"s);
+            application.JoinGame(Map::Id{"town"}, "ТузикT"s);
+            return application;
+        }();
+
+        WHEN("app is serialized") {
+            const Application& application = app;
+            {
+                serialization::ApplicationRepr repr{application};
+                output_archive << repr;
+            }
+
+            THEN("it can be deserialized") {
+                InputArchive input_archive{strm};
+                serialization::ApplicationRepr repr;
+                input_archive >> repr;
+                const auto restored = repr.Restore(test_config);
+
+                CHECK_THAT(restored.GetGameModel(), CommonMatcher(application.GetGameModel()));
+                CHECK_THAT(restored.GetPlayers(), CommonMatcher(application.GetPlayers()));
+            }
+        }
+    }
+}
+
+SCENARIO_METHOD(ForSerializingListener, "Serializing Listener") {
+    using namespace app;
+    app::Application application(test_config);
+    infrastructure::SerializingListener listener( application, state_save_test, save_period);
+    application.SetApplicationListener(std::make_shared<infrastructure::SerializingListener>(listener));
+    application.JoinGame(Map::Id{"map1"}, "Вася1"s);
+    application.JoinGame(Map::Id{"map1"}, "Шарик1"s);
+    application.JoinGame(Map::Id{"map1"}, "Тузик1"s);
+    application.JoinGame(Map::Id{"map3"}, "Вася3"s);
+    application.JoinGame(Map::Id{"map3"}, "Шарик3"s);
+    application.JoinGame(Map::Id{"map3"}, "Тузик3"s);
+    application.JoinGame(Map::Id{"town"}, "ВасяT"s);
+    application.JoinGame(Map::Id{"town"}, "ШарикT"s);
+    application.JoinGame(Map::Id{"town"}, "ТузикT"s);
+
+    GIVEN("a copy app") {
+        WHEN("app is saved") {
+            Application app_copy = application;
+            app_copy.Load(application);
+
+            // Происходит сохранение
+            application.Tick(tick_period);
+
+            // После сохранения
+            CHECK_THAT(app_copy.GetGameModel(), CommonMatcher(application.GetGameModel()));
+            CHECK_THAT(app_copy.GetPlayers(), CommonMatcher(application.GetPlayers()));
+            THEN("it can be load") {
+                listener.Load(test_config);
+                // После загрузки
+                CHECK_THAT(app_copy.GetGameModel(), CommonMatcher(application.GetGameModel()));
+                CHECK_THAT(app_copy.GetPlayers(), CommonMatcher(application.GetPlayers()));
             }
         }
     }

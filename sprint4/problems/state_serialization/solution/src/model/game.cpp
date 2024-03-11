@@ -12,7 +12,7 @@ void Game::AddMap(const Map& map) {
         throw std::invalid_argument("Map with id "s + *map.GetId() + " already exists"s);
     } else {
         try {
-            maps_.emplace_back(map);
+            maps_.emplace_back(std::make_shared<Map>(map));
         } catch (...) {
             id_to_map_index_.erase(it);
             throw;
@@ -33,9 +33,9 @@ const Game::Maps& Game::GetMaps() const noexcept {
 * @param id индекс карты
 * @return сырой указатель на карут, если она есть, иначе - nullptr.
 */
-const Map* Game::FindMap(const Map::Id& id) const noexcept {
+std::shared_ptr<const Map> Game::FindMap(const Map::Id& id) const noexcept {
     if (auto it = id_to_map_index_.find(id); it != id_to_map_index_.end()) {
-        return &maps_.at(it->second);
+        return maps_.at(it->second);
     }
     return nullptr;
 }
@@ -64,7 +64,7 @@ std::pair<GameSession::Id, std::shared_ptr<GameSession>> Game::CreateFreeSession
     }
     auto ms = std::chrono::milliseconds(static_cast<size_t>(period_*1000));
     auto& session = sessions_.emplace_back(std::make_shared<GameSession>(GameSession::Id{game_session_id_++},
-                                                                         *map,
+                                                                         map,
                                                                          loot_gen::LootGenerator(ms, probability_)));
     id_to_session.emplace(session->GetId(), sessions_.size() - 1);
     return {session->GetId(), session};
@@ -150,20 +150,17 @@ std::shared_ptr<GameSession> Game::FindSession(GameSession::Id id) const noexcep
  * Добавить сессию
  * @param session сессия
  */
-void Game::AddSession(const std::shared_ptr<GameSession>& session) {
-    if(session == nullptr){
-        throw std::runtime_error("AddSession:: session == nullptr");
-    }
-    sessions_.push_back(session);
+void Game::AddSession(const GameSession& session) {
+    sessions_.push_back(std::make_shared<GameSession>(session));
     // Меняет счётчик id, чтобы не допускать пересечения индексов в дальнейшем при создании
-    game_session_id_ = (*session->GetId() >= game_session_id_ ||
+    game_session_id_ = (*session.GetId() >= game_session_id_ ||
                         sessions_.size() > game_session_id_) ?
-                                std::max(*session->GetId() + 1, sessions_.size()):
+                                std::max(*session.GetId() + 1, sessions_.size()):
                                 game_session_id_;
 
     auto id_session = sessions_.size() - 1;
-    id_to_session[session->GetId()] = id_session;
-    map_to_sessions_[session->GetMapId()].emplace(session->AmountAvailableSeats(), id_session);
+    id_to_session[session.GetId()] = id_session;
+    map_to_sessions_[session.GetMapId()].emplace(session.AmountAvailableSeats(), id_session);
 }
 
 /**

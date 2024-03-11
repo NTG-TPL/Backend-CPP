@@ -1,8 +1,15 @@
 #include "application.h"
 
+#include <utility>
+
 namespace app {
 Application::Application(const fs::path& config):
-    game_(std::move(InitGame(config))) {}
+    game_(std::move(InitGame(config))) {
+}
+
+Application::Application(model::Game game, Players players):
+        game_(std::move(game)), players_(std::move(players)){
+}
 
 /**
  * Инициализация пути до конфигурационных файлов
@@ -21,7 +28,7 @@ model::Game Application::InitGame(const fs::path& config){
  * @param id индекс карты
  * @return сырой указатель на карут, если она есть, иначе - nullptr.
  */
-const model::Map* Application::FindMap(const model::Map::Id &id) const noexcept {
+std::shared_ptr<const model::Map> Application::FindMap(const model::Map::Id &id) const noexcept {
     return game_.FindMap(id);
 }
 
@@ -69,9 +76,9 @@ std::pair<Token, Player&> Application::JoinGame(const model::Map::Id& map_id, co
 /**
  * Поиск игрока
  * @param token токен игрока
- * @return Возвращает сырой указатель на игрока
+ * @return Возвращает указатель на игрока
  */
-Player* Application::FindPlayer(const Token &token) {
+std::shared_ptr<Player> Application::FindPlayer(const Token &token) {
     return players_.FindByToken(token);
 }
 
@@ -84,26 +91,73 @@ const Players& Application::GetPlayers() const noexcept {
 }
 
 /**
+ * Получить игровую модель
+ * @return Игровая модель
+ */
+const model::Game& Application::GetGameModel() const noexcept {
+    return game_;
+}
+
+/**
  * Обновляет состояние приложения
  * @param tick время
  */
-void Application::Update(std::chrono::milliseconds tick){
+void Application::Tick(std::chrono::milliseconds tick){
     game_.Update(tick);
+    if(listener_){
+        listener_->OnTick(tick);
+    }
 }
 
+/**
+ * Установить свойство случайного размещения игроков
+ * @param enable если true, то размещение игроков случайное,
+ *  иначе - игроки высаживаются в начале первой дороги.
+ */
 void Application::SetRandomSpawm(bool enable) noexcept {
     enable_random_spawn = enable;
 }
 
+/**
+ * Получить свойство случайного размещения игроков
+ * @return enable_random_spawn
+ */
 bool Application::GetRandomSpawm() const noexcept {
     return enable_random_spawn;
 }
 
+/**
+ * Включить TickMode
+ * @param enable eсли true, то управление временем происходит вручную (через запросы к API),
+ * иначе - автоматически.
+ */
 void Application::SetTickMode(bool enable) noexcept {
     enable_tick_mode = enable;
 }
 
+/**
+ * Получить свойство enable_tick_mode
+ * @return enable_tick_mode
+ */
 bool Application::GetTickMode() const noexcept {
     return enable_tick_mode;
 }
+
+/**
+ * Устанавливает слушателя
+ * @param listener слушатель
+ */
+void Application::SetApplicationListener(std::shared_ptr<ApplicationListener> listener) {
+        listener_ = std::move(listener);
+}
+
+/**
+ * Копирует application
+ * @param application
+ */
+void Application::Load(const Application& application) {
+    game_ = application.game_;
+    players_ = application.players_;
+}
+
 } // namespace app

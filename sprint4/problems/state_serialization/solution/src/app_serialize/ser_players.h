@@ -6,7 +6,6 @@
 #include "../app/players.h"
 
 namespace serialization {
-
     class PlayerRepr {
     public:
         PlayerRepr() = default;
@@ -41,7 +40,7 @@ namespace serialization {
 
         explicit PlayersRepr(const app::Players &players) {
             for (auto &[token, player]: players.GetPlayerTokens().GetTokenToPlayer()) {
-                players_.emplace_back(*token, PlayerRepr(player));
+                players_.emplace_back(*token, PlayerRepr(*player));
             }
         }
 

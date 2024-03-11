@@ -1,5 +1,5 @@
 #pragma once
-#include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 
 #include "ser_dog.h"
@@ -13,7 +13,7 @@ namespace serialization {
 
         explicit GameSessionRepr(const GameSession& session):
                 id_(session.GetId()),
-                map_id(*session.GetMap().GetId()){
+                map_id(*session.GetMap()->GetId()){
             for(auto& [_, dog]: session.GetDogs()){
                 if(dog != nullptr){
                     dogs_.emplace_back(*dog);
@@ -27,10 +27,10 @@ namespace serialization {
 
         [[nodiscard]] model::GameSession Restore(const model::Game& game) const {
             using Time = loot_gen::LootGenerator::TimeInterval;
-            auto map = game.FindMap(Map::Id{map_id});
             // Перевод из секунд в миллисекунды
             auto ms = std::chrono::milliseconds(static_cast<size_t>(game.GetLootPeriod()*1000));
-            GameSession game_session(id_, *map, loot_gen::LootGenerator{ms, game.GetLootProbability()});
+            GameSession game_session(id_, game.FindMap(Map::Id{map_id}),
+                                     loot_gen::LootGenerator{ms, game.GetLootProbability()});
 
             for (auto& dog: dogs_) {
                 game_session.AddDog(dog.Restore());

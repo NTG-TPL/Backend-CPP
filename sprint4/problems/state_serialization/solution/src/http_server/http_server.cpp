@@ -6,8 +6,6 @@
 namespace http_server {
 
 void ReportError(beast::error_code ec, std::string_view what) {
-//    using namespace std::string_view_literals;
-//    std::cerr << what << ": "sv << ec.message() << std::endl;
     server_logging::Logger::LogError(ec, what);
 }
 

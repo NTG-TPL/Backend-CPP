@@ -4,6 +4,7 @@
 
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/optional.hpp>
+#include <boost/optional.hpp>
 
 #include "../model/game.h"
 #include "../model/geom.h"
@@ -17,11 +18,9 @@ namespace serialization {
     public:
         GameRepr() = default;
 
-        explicit GameRepr(const model::Game& game):
-                period_(game.GetLootPeriod()),
-                probability_(game.GetLootProbability()) {
+        explicit GameRepr(const model::Game& game) {
             for (auto& session: game.GetSessions()) {
-                sessions_.push_back( (session != nullptr) ? std::optional<GameSessionRepr>{*session} : std::nullopt);
+                sessions_.push_back( (session != nullptr) ? boost::optional<GameSessionRepr>{*session} : boost::none);
             }
         }
 
@@ -30,15 +29,14 @@ namespace serialization {
                 throw std::runtime_error("Путь "s + config.string() + " Не существует."s);
             }
             Game game = json_loader::LoadGame(config);
-            game.SetLootGeneratorConfig(period_, probability_);
             auto& maps = game.GetMaps();
 
             for (auto& session: sessions_) {
                 if(session.has_value()){
-                    game.AddSession(std::make_shared<GameSession>(session->Restore(game)));
+                    game.AddSession(session->Restore(game));
                 }else {
                     auto index = static_cast<std::int32_t>(GenerateInRange(0ul, maps.size() - 1));
-                    game.AddFreeSession((maps.begin() + index)->GetId());
+                    game.AddFreeSession((maps.begin() + index)->get()->GetId());
                 }
             }
             return game;
@@ -50,8 +48,7 @@ namespace serialization {
         }
 
     private:
-        double period_{}, probability_{};
-        std::vector<std::optional<GameSessionRepr>> sessions_;
+        std::vector<boost::optional<GameSessionRepr>> sessions_;
     };
 
 }

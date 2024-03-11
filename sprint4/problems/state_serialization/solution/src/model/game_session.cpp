@@ -7,14 +7,14 @@ namespace model {
 * @return индекс карты
 */
 const Map::Id& GameSession::GetMapId() const noexcept {
-    return map_.GetId();
+    return map_->GetId();
 }
 
 /**
 * Получить ссылку на карту
 * @return Ссылка на карту
 */
-const Map& GameSession::GetMap() const noexcept{
+std::shared_ptr<const Map> GameSession::GetMap() const noexcept{
     return map_;
 }
 
@@ -147,7 +147,7 @@ Point2d GameSession::GenerateNewPosition(bool enable) const{
 * @param enable true - включить генератор, false - возвращать всегда стартовую точку дороги
 */
 void GameSession::GenerateLoot(std::chrono::milliseconds tick, bool enable) {
-    auto& loot_types = map_.GetLootTypes();
+    auto& loot_types = map_->GetLootTypes();
     if(loot_types.empty() || loots_.size() >= dogs_.size()){
         return;
     }
@@ -160,7 +160,7 @@ void GameSession::GenerateLoot(std::chrono::milliseconds tick, bool enable) {
 
     for(size_t i = 0; i < count; ++i) {
         auto id = Loot::Id{loot_id_++};
-        loots_.emplace(id, Loot{id, map_.GetLootTypes().at(type).value, GenerateNewPosition(enable), type});
+        loots_.emplace(id, Loot{id, map_->GetLootTypes().at(type).value, GenerateNewPosition(enable), type});
     }
 }
 
@@ -172,7 +172,7 @@ void GameSession::GenerateLoot(std::chrono::milliseconds tick, bool enable) {
  */
 void GameSession::DetectCollisionWithRoadBorders(const std::shared_ptr<model::Dog>& dog, Point2d current_position, Point2d new_position) {
     std::optional<Road::RoadRectangle::Borders> union_borders;
-    for(const auto & road : map_.GetRoads()) {
+    for(const auto & road : map_->GetRoads()) {
         if(road.Contains(current_position)) {
             auto borders = road.GetBorders();
             if(!union_borders.has_value()){
@@ -210,7 +210,7 @@ void GameSession::CollectingAndReturningLoot(ItemGatherer& item_gatherer, std::u
         loot_numb_to_item[loot_idx++] = FoundObject{FoundObject::Id {*loot.GetId()}, loot.GetType(), loot.GetValue()};
         item_gatherer.Add(Object(loot.GetPosition(), loot.GetWidth()));
     }
-    for (const auto& office : map_.GetOffices()) {
+    for (const auto& office : map_->GetOffices()) {
         item_gatherer.Add(Object(office.GetPosition(), office.GetWidth()));
     }
     auto gathering_events = FindGatherEvents(item_gatherer);
@@ -223,7 +223,7 @@ void GameSession::CollectingAndReturningLoot(ItemGatherer& item_gatherer, std::u
         }
 
         // Если это клад и сумка не полна, то кладёт его в сумку
-        if (loot_numb_to_item.contains(gatherring_event.item_id) && dog->GetBag().size() < map_.GetBagCapacity()) {
+        if (loot_numb_to_item.contains(gatherring_event.item_id) && dog->GetBag().size() < map_->GetBagCapacity()) {
             auto& loot = loot_numb_to_item.at(gatherring_event.item_id);
             dog->PutToBag(loot);
             loots_.erase(Loot::Id{*loot.id});
@@ -272,10 +272,10 @@ void GameSession::Update(std::chrono::milliseconds tick){
  * @return Point2i на дороге
  */
     Point2d DogDropOffGenerator::GenerateDogPosition(const GameSession& session, bool enable){
-        auto& map = session.GetMap();
-        auto& roads = map.GetRoads();
+        auto map = session.GetMap();
+        auto& roads = map->GetRoads();
         if (roads.empty()) {
-            throw std::logic_error("На карте " + *map.GetId() + " нет дорог");
+            throw std::logic_error("На карте " + *map->GetId() + " нет дорог");
         }
         if (!enable) {
             return static_cast<Point2d>(roads.at(0).GetStart());
