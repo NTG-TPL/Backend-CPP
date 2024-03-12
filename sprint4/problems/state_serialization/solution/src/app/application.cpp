@@ -3,12 +3,12 @@
 #include <utility>
 
 namespace app {
-Application::Application(const fs::path& config):
-    game_(std::move(InitGame(config))) {
+Application::Application(fs::path config):
+        config_(std::move(config)), game_(std::move(InitGame(GetConfigFilePath()))) {
 }
 
-Application::Application(model::Game game, Players players):
-        game_(std::move(game)), players_(std::move(players)){
+Application::Application(fs::path config, model::Game game, Players players):
+        config_(std::move(config)), game_(std::move(game)), players_(std::move(players)){
 }
 
 /**
@@ -152,12 +152,11 @@ void Application::SetApplicationListener(std::shared_ptr<ApplicationListener> li
 }
 
 /**
- * Копирует application
- * @param application
+ * Получить путь к файлу конфигурацц
+ * @return путь к файлу конфигурацц
  */
-void Application::Load(const Application& application) {
-    game_ = application.game_;
-    players_ = application.players_;
+const fs::path& Application::GetConfigFilePath() const noexcept {
+    return config_;
 }
 
 } // namespace app

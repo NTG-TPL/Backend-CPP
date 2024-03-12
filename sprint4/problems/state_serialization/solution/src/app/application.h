@@ -13,8 +13,8 @@ using namespace std::chrono_literals;
 class Application {
 public:
 
-    explicit Application(const fs::path& config);
-    Application(model::Game game, Players players);
+    explicit Application(fs::path config);
+    Application(fs::path config, model::Game game, Players players);
 
     Application() = delete;
     ~Application() = default;
@@ -31,12 +31,13 @@ public:
     void SetTickMode(bool enable) noexcept;
     bool GetTickMode() const noexcept;
     void SetApplicationListener(std::shared_ptr<ApplicationListener> listener);
-    void Load(const Application& application);
+    const fs::path& GetConfigFilePath() const noexcept;
 
 private:
     static model::Game InitGame(const fs::path& config);
 
 private:
+    fs::path config_;
     model::Game game_;
     Players players_;
     static inline std::atomic<uint64_t> dog_id_ = 0;

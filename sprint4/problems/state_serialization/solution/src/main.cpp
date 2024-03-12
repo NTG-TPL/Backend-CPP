@@ -61,7 +61,7 @@ int main(int argc, const char* argv[]) {
         infrastructure::SerializingListener listener(app, args.state_file,
                                                      std::chrono::milliseconds{args.save_state_period});
         app.SetApplicationListener(std::make_shared<infrastructure::SerializingListener>(listener));
-        listener.Load(config_file);
+        listener.Load();
 
         // 2. Инициализируем io_context
         const unsigned num_threads = std::thread::hardware_concurrency();

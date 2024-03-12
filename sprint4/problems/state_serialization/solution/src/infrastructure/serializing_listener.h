@@ -26,76 +26,13 @@ public:
             save_period_(save_period), time_since_save_(0ms) {
     }
 
-    void OnTick(std::chrono::milliseconds tick) override {
-        time_since_save_ += tick;
-        if (time_since_save_ >= save_period_) {
-            /*Логирование*/{
-                boost::json::object obj;
-                obj["Time Since Save (ms)"] = time_since_save_.count();
-                obj["Save period (ms)"] = save_period_.count();
-                server_logging::Logger::LogInfo(obj, "serialization");
-            }
-            Save();
-            time_since_save_ = 0ms;
-        }
-    }
+    void OnTick(std::chrono::milliseconds tick) override;
 
-    void Save() const {
-        using namespace std::string_literals;
-        if (state_file_.empty()){
-            return;
-        }
+    void Save() const;
 
-        std::filesystem::path temp_file = state_file_;
-        temp_file += ".temp";
-        std::ofstream state_strm(temp_file);
+    void Load();
 
-        if(!state_strm.is_open()) {
-            throw std::logic_error("The "s + temp_file.string() + " file was not opened");
-        }
-
-        try {
-            OutputArchive output_archive{state_strm};
-            output_archive << serialization::ApplicationRepr{application_};
-        } catch (const std::system_error& e) {
-            server_logging::Logger::LogError(e.code(), "Serialization error "s + e.what());
-            throw std::runtime_error("Save:: serialization error"s + e.what());
-        } catch (const std::exception& e) {
-            throw std::runtime_error("Save:: serialization error"s + e.what());
-        }
-
-        std::filesystem::rename(temp_file, state_file_);
-    }
-
-    void Load(const fs::path& config){
-        using namespace std::string_literals;
-
-        if (state_file_.empty() ||
-            !std::filesystem::exists(state_file_)){
-            return;
-        }
-
-        std::ifstream state_strm(state_file_);
-        if(!state_strm.is_open()) {
-            throw std::logic_error("The "s + state_file_.string() + " file was not opened");
-        }
-
-        try {
-            InputArchive input_archive{state_strm};
-            serialization::ApplicationRepr application_repr;
-            input_archive >> application_repr;
-            application_.Load(application_repr.Restore(config));
-        } catch (const std::system_error& e) {
-            server_logging::Logger::LogError(e.code(), "Serialization error "s + e.what());
-            throw std::runtime_error("Load:: serialization error"s + e.what());
-        } catch (const std::exception& e) {
-            throw std::runtime_error("Load:: serialization error"s + e.what());
-        }
-    }
-
-    [[nodiscard]] const fs::path& GetStateFilePath() const noexcept {
-        return state_file_;
-    }
+    [[nodiscard]] const fs::path& GetStateFilePath() const noexcept;
 
 private:
     app::Application& application_;
@@ -104,4 +41,4 @@ private:
     milliseconds time_since_save_;
 };
 
-}
+} // namespace infrastructure

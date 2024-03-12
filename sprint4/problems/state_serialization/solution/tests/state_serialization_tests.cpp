@@ -538,7 +538,6 @@ SCENARIO_METHOD(ForSerializingListener, "Serializing Listener") {
     GIVEN("a copy app") {
         WHEN("app is saved") {
             Application app_copy = application;
-            app_copy.Load(application);
 
             // Происходит сохранение
             application.Tick(tick_period);
@@ -547,7 +546,7 @@ SCENARIO_METHOD(ForSerializingListener, "Serializing Listener") {
             CHECK_THAT(app_copy.GetGameModel(), CommonMatcher(application.GetGameModel()));
             CHECK_THAT(app_copy.GetPlayers(), CommonMatcher(application.GetPlayers()));
             THEN("it can be load") {
-                listener.Load(test_config);
+                listener.Load();
                 // После загрузки
                 CHECK_THAT(app_copy.GetGameModel(), CommonMatcher(application.GetGameModel()));
                 CHECK_THAT(app_copy.GetPlayers(), CommonMatcher(application.GetPlayers()));

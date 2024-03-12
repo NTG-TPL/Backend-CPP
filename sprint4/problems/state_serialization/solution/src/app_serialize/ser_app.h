@@ -24,7 +24,7 @@ namespace serialization {
             }
             Game game = game_.Restore(config);
             app::Players players = players_.Restore(game);
-            return {std::move(game), std::move(players)};
+            return {config, std::move(game), std::move(players)};
         }
 
         template<typename Archive>

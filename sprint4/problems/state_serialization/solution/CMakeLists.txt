@@ -100,6 +100,7 @@ set(APPLICATION
 
 set(INFRASTRUCURE
 		src/infrastructure/serializing_listener.h
+		src/infrastructure/serializing_listener.cpp
 )
 
 set(MODEL_SERIALIZE
@@ -167,6 +168,7 @@ add_executable(${GAME_SERVER_TESTS}
 		${APPLICATION}
 		${SERIALIZE}
 		${LOGGER}
+		${INFRASTRUCURE}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${MODEL_LIB})
