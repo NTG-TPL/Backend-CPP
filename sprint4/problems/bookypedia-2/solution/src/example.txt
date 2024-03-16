@@ -1,0 +1,36 @@
+AddBook 1906  White Fan
+Jack London
+adventure, dog,   gold   rush  ,  dog,,dogs
+AddBook 2004 The Cloud Atlas
+David Mitchell
+AddBook 2004 The Cloud Atlas
+Liam Callanan
+
+ShowBooks
+1 The Cloud Atlas by David Mitchell, 2004
+2 The Cloud Atlas by Liam Callanan, 2004
+3 White Fan by Jack London, 1906
+EditBook White Fan
+Enter new title or empty line to use the current one (White Fan):
+White Fang
+Enter publication year or empty line to use the current one (1906):
+
+Enter tags (current tags: adventure, cat, gold rush):
+adventure, gold rush, dog
+ShowBook White Fang
+Title: White Fang
+Author: Jack London
+Publication year: 1096
+Tags: adventure, dog, gold rush
+EditBook
+1 The Cloud Atlas by David Mitchell, 2004
+2 The Cloud Atlas by Liam Callanan, 2004
+3 White Fang by Jack London, 1906
+Enter the book # or empty line to cancel:
+3
+Enter new title or empty line to use the current one (White Fang):
+
+Enter publication year or empty line to use the current one (1906):
+
+Enter tags (current tags: adventure, dog, gold rush):
+adventure, gold rush, dog, wolf 
