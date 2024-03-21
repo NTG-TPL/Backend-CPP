@@ -37,10 +37,8 @@ namespace infrastructure {
             for (auto& [token, player]: token_to_player) {
                 if(player != nullptr){
                     auto dog = player->GetDog();
-                    if (dog != nullptr &&
-                        dog->GetStayTime() >= game.GetDogRetirementTime()) {
-                        to_save.emplace_back(player->GetId(), dog->GetName(),
-                                             dog->GetScore(), dog->GetLifeTime());
+                    if (dog && dog->GetStayTime() >= game.GetDogRetirementTime()) {
+                        to_save.emplace_back(player->GetId(), dog->GetName(), dog->GetScore(), dog->GetLifeTime());
                         to_delete.emplace_back(token);
                     }
                 }

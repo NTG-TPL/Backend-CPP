@@ -196,10 +196,8 @@ void GameSession::DetectCollisionWithRoadBorders(const std::shared_ptr<model::Do
     }
     // Пересечение траектории с допустимой областью
     if(!union_borders->Contains(new_position)){
-        new_position.y = std::max(new_position.y, union_borders->min_y);
-        new_position.y = std::min(new_position.y, union_borders->max_y);
-        new_position.x = std::max(new_position.x, union_borders->min_x);
-        new_position.x = std::min(new_position.x, union_borders->max_x);
+        new_position.x = std::clamp(new_position.x , union_borders->min_x, union_borders->max_x),
+        new_position.y = std::clamp(new_position.y, union_borders->min_y, union_borders->max_y),
         dog->Stand();
     }
     dog->SetPosition(new_position);
@@ -254,13 +252,16 @@ void GameSession::Update(std::chrono::milliseconds tick){
             auto position = dog->GetPosition();
             auto speed = dog->GetSpeed();
 
-            static constexpr const std::int32_t divider = 1000;
-            double delta_seconds = static_cast<double>(tick.count())/divider;
+            static constexpr const std::int32_t ms_in_seconds = 1000;
+            double delta_seconds = static_cast<double>(tick.count()) / ms_in_seconds;
             Point2d new_position = {position.x + speed.dx * delta_seconds,
                                     position.y + speed.dy * delta_seconds};
 
-            DetectCollisionWithRoadBorders(dog, position, new_position);
             dog->UpdateLifeTimer(tick);
+            DetectCollisionWithRoadBorders(dog, position, new_position);
+            if(dog->GetPosition() == position){
+                continue;
+            }
 
             // Добавление собак в сборщик предметов для дальнейшего разрешения временных конфликтов
             gather_by_index.emplace(dog_index++, dog);

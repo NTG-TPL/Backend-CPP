@@ -59,11 +59,9 @@ StringResponse ApiHandler::HandleApiRequest(const StringRequest& req){
         if(decoded_target.starts_with(EndPoint::RECORDS)){
             return !is_get_or_head_request() ? method_not_allowed(ErrorResponse::INVALID_GET, Api::GET_HEAD) : RequestToRecords(req, decoded_target);
         }
-        //TODO:: Лишнее ?
-        return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ(), CacheControl::NO_CACHE);
     }
 
-    return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ(), CacheControl::NO_CACHE);
+    return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ("The request "s+ decoded_target +" does not exist"s), CacheControl::NO_CACHE);
 }
 
 /**
@@ -203,7 +201,6 @@ StringResponse ApiHandler::RequestToMaps(const StringRequest& req, std::string& 
  */
 StringResponse ApiHandler::RequestToState(const StringRequest& req) {
     using namespace model;
-
     return ExecuteAuthorized(req, [&req](const std::shared_ptr<app::Player>& player) {
         json::object obj;
         if(player) {
@@ -238,7 +235,10 @@ StringResponse ApiHandler::RequestToAction(const StringRequest& req) {
                 return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_ACTION, CacheControl::NO_CACHE );
             }
         }
-        return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
+        // TODO:: заменить на json::serialize(obj)
+        return MakeTextResponse(req, http::status::ok,
+                                json::serialize(json::value{std::to_string(*player->GetDog()->GetId()), json::value_from(*player->GetDog())}),
+                                CacheControl::NO_CACHE);
     });
 }
 

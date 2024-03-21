@@ -64,7 +64,6 @@ std::optional<std::shared_ptr<Player>> PlayerTokens::FindPlayer(const Token& tok
  */
 void PlayerTokens::DeleteTokenPlayer(const Token& token) {
     if(token_to_player_.contains(token)){
-        token_to_player_.at(token).reset();
         token_to_player_.erase(token);
     }
 }
@@ -143,9 +142,7 @@ void Players::DeleteByToken(const Token& token) {
         if(session && dog){
             session->DeleteDog(dog->GetId());
         }
-        auto id = (*player)->GetId();
-        players_.at(id).reset();
-        players_.erase(id);
+        players_.erase((*player)->GetId());
         tokens_.DeleteTokenPlayer(token);
     }
 }

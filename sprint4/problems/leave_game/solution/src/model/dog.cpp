@@ -119,7 +119,7 @@ void Dog::BagClear() noexcept {
 void Dog::UpdateLifeTimer(std::chrono::milliseconds delta_time) {
     using namespace std::literals::chrono_literals;
     life_time_ += delta_time;
-    stay_time_ = (speed_ == Movement::Stand() || direction_ == Movement::STOP) ? (stay_time_ += delta_time) : 0ms;
+    stay_time_ = (speed_ == Movement::Stand()) ? (stay_time_ += delta_time) : 0ms;
 }
 
 /**
