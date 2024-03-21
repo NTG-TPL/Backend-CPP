@@ -64,7 +64,7 @@ private:
     StringResponse RequestForListPlayers(const StringRequest& req);
     static std::optional<app::Token> TryExtractToken(const StringRequest& req);
     StringResponse ExecuteAuthorized(const StringRequest& req,
-                                     const std::function<StringResponse(app::Player& player)>& action);
+                                     const std::function<StringResponse(std::shared_ptr<app::Player>& player)>& action);
     StringResponse RequestToJoin(const StringRequest& req);
     StringResponse RequestToMaps(const StringRequest& req, std::string & decoded_target);
     StringResponse RequestToState(const StringRequest& req);

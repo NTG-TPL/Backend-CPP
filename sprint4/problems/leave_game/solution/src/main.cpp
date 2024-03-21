@@ -47,7 +47,6 @@ std::string GetDataBaseConfigFromEnv() {
 
 } // namespace
 
-const std::chrono::milliseconds DEFAULT_TICK = 50ms;
 const size_t CAPACITY_CONNECTION_POOL = std::max(1u, std::thread::hardware_concurrency());
 
 
@@ -87,10 +86,9 @@ int main(int argc, const char* argv[]) {
         auto api_strand = net::make_strand(ioc);
 
         std::shared_ptr<http_handler::Ticker> ticker;
-        if(!args.tick_period.has_value()) {
-            ticker = std::make_shared<http_handler::Ticker>(api_strand, DEFAULT_TICK, [&app](std::chrono::milliseconds delta) {
-                app.Tick(delta);
-            });
+        if(args.tick_period.has_value()) {
+            ticker = std::make_shared<http_handler::Ticker>(api_strand, std::chrono::milliseconds{*args.tick_period},
+                                                            [&app](std::chrono::milliseconds delta) { app.Tick(delta); });
             ticker->Start();
         }else {
             app.SetTickMode(true);

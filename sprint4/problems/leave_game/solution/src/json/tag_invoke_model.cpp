@@ -216,8 +216,8 @@ namespace model {
 
         std::chrono::milliseconds default_retirement_time = DefaultValues::RETIREMENT_TIME;
         if(json_obj.contains(UserKey::RETIREMENT_TIME)){
-            default_retirement_time = std::chrono::milliseconds(static_cast<int64_t>(
-                                                                        json_obj.at(UserKey::RETIREMENT_TIME).as_double() * DefaultValues::MS_IN_SECOND /*перевод из секунд в миллисекунды*/));
+            auto ms = static_cast<int64_t>(json_obj.at(UserKey::RETIREMENT_TIME).as_double() * DefaultValues::MS_IN_SECOND);
+            default_retirement_time = std::chrono::milliseconds(ms);
         }
         game.SetDogRetirementTime(default_retirement_time);
 

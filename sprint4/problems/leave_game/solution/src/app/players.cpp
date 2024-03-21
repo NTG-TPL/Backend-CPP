@@ -5,21 +5,30 @@ namespace app {
  * Получить сессию игрока
  * @return Ссылка на сессию
  */
-const model::GameSession& Player::GetSession() const & noexcept {
-    return *session_;
+std::shared_ptr<const model::GameSession>Player::GetSession() const & noexcept {
+    return session_;
 }
 
-model::GameSession& Player::GetSession() & noexcept {
-    return *session_;
+std::shared_ptr<model::GameSession> Player::GetSession() & noexcept {
+    return session_;
 }
 
 /**
  * Получить собаку игрока
  * @return Ссылка на собаку
  */
-const std::shared_ptr<model::Dog>& Player::GetDog() {
+std::shared_ptr<model::Dog> Player::GetDog() & noexcept {
     return dog_;
 }
+
+/**
+ * Получить собаку игрока
+ * @return Константная ссылка на собаку
+ */
+[[nodiscard]] std::shared_ptr<const model::Dog> Player::GetDog() const & noexcept{
+    return dog_;
+}
+
 
 /**
  * Перемещает собаку в направлении dir со скоростью speed
@@ -27,15 +36,9 @@ const std::shared_ptr<model::Dog>& Player::GetDog() {
  * @param speed Скорость перемещения
  */
 void Player::DogMove(std::string_view dir, model::DimensionDouble speed){
-    dog_->Move(dir, speed);
-}
-
-/**
- * Получить собаку игрока
- * @return Константная ссылка на собаку
- */
-[[nodiscard]] const std::shared_ptr<model::Dog>& Player::GetDog() const noexcept{
-    return dog_;
+    if(dog_){
+        dog_->Move(dir, speed);
+    }
 }
 
 /**
@@ -51,8 +54,8 @@ Player::Id Player::GetId() const noexcept{
  * @param token Токен игрока
  * @return Указатель на константу Player
  */
-std::shared_ptr<Player> PlayerTokens::FindPlayer(const Token& token) {
-    return token_to_player_.contains(token) ? token_to_player_.at(token) : nullptr;
+std::optional<std::shared_ptr<Player>> PlayerTokens::FindPlayer(const Token& token) {
+    return token_to_player_.contains(token) ? std::optional{token_to_player_.at(token)} : std::nullopt;
 }
 
 /**
@@ -60,7 +63,10 @@ std::shared_ptr<Player> PlayerTokens::FindPlayer(const Token& token) {
  * @param token токен
  */
 void PlayerTokens::DeleteTokenPlayer(const Token& token) {
-    token_to_player_.erase(token);
+    if(token_to_player_.contains(token)){
+        token_to_player_.at(token).reset();
+        token_to_player_.erase(token);
+    }
 }
 
 /**
@@ -121,7 +127,7 @@ std::pair<Token, Player&> Players::AddPlayer(const model::Dog::Id& id, const std
  * @param map_id индекс карты
  * @return Указатель на игрока
  */
-std::shared_ptr<Player> Players::FindByToken(const Token& token){
+std::optional<std::shared_ptr<Player>> Players::FindByToken(const Token& token){
     return tokens_.FindPlayer(token);
 }
 
@@ -131,8 +137,17 @@ std::shared_ptr<Player> Players::FindByToken(const Token& token){
  */
 void Players::DeleteByToken(const Token& token) {
     auto player = tokens_.FindPlayer(token);
-    players_.erase(player->GetId());
-    tokens_.DeleteTokenPlayer(token);
+    if(player.has_value()){
+        auto session = (*player)->GetSession();
+        auto dog = (*player)->GetDog();
+        if(session && dog){
+            session->DeleteDog(dog->GetId());
+        }
+        auto id = (*player)->GetId();
+        players_.at(id).reset();
+        players_.erase(id);
+        tokens_.DeleteTokenPlayer(token);
+    }
 }
 
 /**

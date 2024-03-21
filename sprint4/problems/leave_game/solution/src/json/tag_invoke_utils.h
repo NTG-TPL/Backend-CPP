@@ -28,7 +28,7 @@ struct DefaultValues {
     static const inline model::DimensionDouble DOG_SPEED          = 1.0;
     static const inline model::DimensionDouble MS_IN_SECOND       = 1000.0;
     static const inline size_t BAG_CAPACITY                       = 3;
-    static const inline std::chrono::milliseconds RETIREMENT_TIME = std::chrono::milliseconds{6000};
+    static const inline std::chrono::milliseconds RETIREMENT_TIME = std::chrono::milliseconds{60000};
 };
 
 struct MapKey {

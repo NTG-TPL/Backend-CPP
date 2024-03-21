@@ -225,13 +225,13 @@ void GameSession::CollectingAndReturningLoot(ItemGatherer& item_gatherer, std::u
     for (const auto& gatherring_event : gathering_events) {
         auto& dog = gather_by_index.at(gatherring_event.gatherer_id);
         // Если это офис
-        if (gatherring_event.item_id >= loots_.size()) {
+        if (dog && gatherring_event.item_id >= loots_.size()) {
             dog->BagClear(); // Возвращает все предметы на базу
             continue;
         }
 
         // Если это клад и сумка не полна, то кладёт его в сумку
-        if (loot_numb_to_item.contains(gatherring_event.item_id) && dog->GetBag().size() < map_->GetBagCapacity()) {
+        if (dog && loot_numb_to_item.contains(gatherring_event.item_id) && dog->GetBag().size() < map_->GetBagCapacity()) {
             auto& loot = loot_numb_to_item.at(gatherring_event.item_id);
             dog->PutToBag(loot);
             loots_.erase(Loot::Id{*loot.id});
@@ -265,8 +265,6 @@ void GameSession::Update(std::chrono::milliseconds tick){
             // Добавление собак в сборщик предметов для дальнейшего разрешения временных конфликтов
             gather_by_index.emplace(dog_index++, dog);
             item_gatherer.Add(Gatherer{position, new_position, dog->GetWidth()});
-        }else {
-            dogs_.erase(id);
         }
     }
     CollectingAndReturningLoot(item_gatherer, gather_by_index);

@@ -52,22 +52,18 @@ StringResponse ApiHandler::HandleApiRequest(const StringRequest& req){
             return !is_post_request() ? method_not_allowed(ErrorResponse::INVALID_POST, Api::POST) : RequestToAction(req);
         }
 
-        if(decoded_target == EndPoint::TICK){
-            if(app_.GetTickMode()){
-                return MakeTextResponse(req, http::status::ok, "{}", CacheControl::NO_CACHE);
-            }
-
+        if(app_.GetTickMode() && decoded_target == EndPoint::TICK){
             return !is_post_request() ? method_not_allowed(ErrorResponse::INVALID_POST, Api::POST) : RequestToTick(req);
         }
 
         if(decoded_target.starts_with(EndPoint::RECORDS)){
             return !is_get_or_head_request() ? method_not_allowed(ErrorResponse::INVALID_GET, Api::GET_HEAD) : RequestToRecords(req, decoded_target);
         }
-
-        return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
+        //TODO:: Лишнее ?
+        return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ(), CacheControl::NO_CACHE);
     }
 
-    return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
+    return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ(), CacheControl::NO_CACHE);
 }
 
 /**
@@ -78,13 +74,14 @@ StringResponse ApiHandler::HandleApiRequest(const StringRequest& req){
 StringResponse ApiHandler::RequestForListPlayers(const StringRequest& req){
     using namespace model;
 
-    return ExecuteAuthorized(req, [&req](const app::Player &player) {
+    return ExecuteAuthorized(req, [&req](const std::shared_ptr<app::Player>& player) {
         json::object obj;
-        auto dogs = player.GetSession().GetDogs();
-        for (const auto &[id, dog]: dogs) {
-            obj[std::to_string(*id)] = {UserKey::NAME, dog->GetName()};
+        if(player){
+            auto dogs = player->GetSession()->GetDogs();
+            for (const auto &[id, dog]: dogs) {
+                obj[std::to_string(*id)] = {UserKey::NAME, dog->GetName()};
+            }
         }
-
         return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
     });
 }
@@ -132,10 +129,10 @@ std::optional<app::Token> ApiHandler::TryExtractToken(const StringRequest& req) 
  * @return Возвращает ответ StringResponse{http::response<http::string_body>}
  */
 StringResponse ApiHandler::ExecuteAuthorized(const StringRequest& req,
-                                              const std::function<StringResponse(app::Player&)>& action) {
+                                              const std::function<StringResponse(std::shared_ptr<app::Player>&)>& action) {
     if (auto token = ApiHandler::TryExtractToken(req); token.has_value()) {
         auto player = app_.FindPlayer(*token);
-        if (player == nullptr) {
+        if (!player.has_value()) {
             return MakeTextResponse(req, http::status::unauthorized, ErrorResponse::UNKNOWN_TOKEN, CacheControl::NO_CACHE);
         }
         return action(*player);
@@ -196,7 +193,7 @@ StringResponse ApiHandler::RequestToMaps(const StringRequest& req, std::string& 
             return MakeTextResponse(req, http::status::not_found, ErrorResponse::MAP_NOT_FOUND, CacheControl::NO_CACHE);
         }
     }
-    return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
+    return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ(), CacheControl::NO_CACHE);
 }
 
 /**
@@ -207,37 +204,39 @@ StringResponse ApiHandler::RequestToMaps(const StringRequest& req, std::string& 
 StringResponse ApiHandler::RequestToState(const StringRequest& req) {
     using namespace model;
 
-    return ExecuteAuthorized(req, [&req](const app::Player &player) {
+    return ExecuteAuthorized(req, [&req](const std::shared_ptr<app::Player>& player) {
         json::object obj;
-        auto& session = player.GetSession();
-        auto& dogs = session.GetDogs();
-        json::object json_dogs, json_loots;
-        for (const auto &[id, dog]: dogs) {
-            json_dogs[std::to_string(*id)] = json::value_from(*dog);
+        if(player) {
+            auto session = player->GetSession();
+            auto dogs = session->GetDogs();
+            json::object json_dogs, json_loots;
+            for (const auto &[id, dog]: dogs) {
+                json_dogs[std::to_string(*id)] = json::value_from(*dog);
+            }
+            obj[UserKey::PLAYERS] = json_dogs;
+
+            auto& loots = session->GetLoots();
+            for (const auto &[id, loot]: loots) {
+                json_loots[std::to_string(*id)] = json::value_from(loot);
+            }
+            obj[LootKey::LOST] = json_loots;
         }
-        obj[UserKey::PLAYERS] = json_dogs;
-
-        auto& loots = session.GetLoots();
-        for (const auto &[id, loot]: loots) {
-            json_loots[std::to_string(*id)] = json::value_from(loot);
-        }
-
-        obj[LootKey::LOST] = json_loots;
-
         return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
     });
 }
 
 StringResponse ApiHandler::RequestToAction(const StringRequest& req) {
     using namespace model;
-    return ExecuteAuthorized(req, [&req](app::Player &player) {
+    return ExecuteAuthorized(req, [&req](std::shared_ptr<app::Player>& player) {
         json::object obj;
-        auto map = player.GetSession().GetMap();
-        try{
-            json::object json_body = json::parse(req.body()).as_object();
-            player.DogMove(json_body.at(UserKey::MOVE).as_string(), map->GetDogSpeed());
-        } catch (...) {
-            return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_ACTION, CacheControl::NO_CACHE );
+        if(player){
+            auto map = player->GetSession()->GetMap();
+            try{
+                json::object json_body = json::parse(req.body()).as_object();
+                player->DogMove(json_body.at(UserKey::MOVE).as_string(), map->GetDogSpeed());
+            } catch (...) {
+                return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_ACTION, CacheControl::NO_CACHE );
+            }
         }
         return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
     });
@@ -250,6 +249,8 @@ StringResponse ApiHandler::RequestToAction(const StringRequest& req) {
  */
 StringResponse ApiHandler::RequestToTick(const StringRequest& req){
     using namespace model;
+    using namespace std::string_literals;
+
         json::object obj;
     std::chrono::milliseconds milliseconds;
     try{
@@ -262,15 +263,14 @@ StringResponse ApiHandler::RequestToTick(const StringRequest& req){
     try {
         app_.Tick(milliseconds);
     } catch (const std::exception& ex) {
-        std::cerr << ex.what() << std::endl;
-        return MakeTextResponse(req, http::status::internal_server_error, "Update error", CacheControl::NO_CACHE );
+        return MakeTextResponse(req, http::status::internal_server_error, ErrorResponse::SERVER_ERROR("Update error"s + std::string{ex.what()}), CacheControl::NO_CACHE );
     }
-//      auto& players = app_.GetPlayers();
-//      json::object json_dogs;
-//      for (const auto& [id, player]: players.GetList()) {
-//          json_dogs[std::to_string(*player->GetDog()->GetId())] = json::value_from(*player->GetDog());
-//      }
-//      obj[UserKey::PLAYERS] = json_dogs;
+//    auto& players = app_.GetPlayers();
+//    json::object json_dogs;
+//    for (const auto& [id, player]: players.GetList()) {
+//        json_dogs[std::to_string(*player->GetDog()->GetId())] = json::value_from(*player->GetDog());
+//    }
+//    obj[UserKey::PLAYERS] = json_dogs;
     return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
 }
 
@@ -288,22 +288,21 @@ StringResponse ApiHandler::RequestToRecords(const StringRequest& req, std::strin
         auto params = GetUriRecordsParams(decoded_target);
         start = params.first;
         max_items = params.second;
-    } catch (const std::system_error& e) {
-        server_logging::Logger::LogError(e.code(), R"(Parse params "start" and "message" error )"s + e.what());
-        return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
     } catch (const std::exception& e) {
-        return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
+        return MakeTextResponse(req, http::status::bad_request,
+                                ErrorResponse::BAD_REQ(R"(Parse params "start" and "message" error )"s + e.what()),
+                                CacheControl::NO_CACHE);
     }
 
     if (start < 0 || max_items < 0 || max_items > Restrictions::RECORD_MAX_ITEMS) {
-        return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ, CacheControl::NO_CACHE);
+        return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_REQ(), CacheControl::NO_CACHE);
     }
     data_base::domain::RetiredPlayers retired_players;
     try {
         retired_players = use_cases_.GetRetiredPlayers(start, max_items);
     } catch (std::exception& ex){
         return MakeTextResponse(req, http::status::internal_server_error,
-                                "The error of getting the record holders",
+                                ErrorResponse::SERVER_ERROR("The error of getting the record holders"s),
                                 CacheControl::NO_CACHE);
     }
     return MakeTextResponse(req, http::status::ok, json::serialize(json::value_from(retired_players)), CacheControl::NO_CACHE);

@@ -71,7 +71,7 @@ std::pair<Token, Player&> Application::JoinGame(const model::Map::Id& map_id, co
  * @param token токен игрока
  * @return Возвращает указатель на игрока
  */
-std::shared_ptr<Player> Application::FindPlayer(const Token &token) {
+std::optional<std::shared_ptr<Player>> Application::FindPlayer(const Token &token) {
     return players_.FindByToken(token);
 }
 
@@ -156,6 +156,14 @@ void Application::AddApplicationListener(std::shared_ptr<ApplicationListener> li
  */
 const fs::path& Application::GetConfigFilePath() const noexcept {
     return config_;
+}
+
+/**
+ * Получить слушателей приложения
+ * @return Контейнер слушателей
+ */
+std::vector<std::shared_ptr<ApplicationListener>>& Application::GetApplicationListeners() noexcept {
+    return listeners_;
 }
 
 } // namespace app

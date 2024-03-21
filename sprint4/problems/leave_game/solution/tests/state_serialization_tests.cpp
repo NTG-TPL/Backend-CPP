@@ -119,7 +119,7 @@ namespace model {
 
         return lhs.GetId().ToString() == rhs.GetId().ToString() &&
                 (*lhs.GetDog()->GetId() == *rhs.GetDog()->GetId()) &&
-                (*lhs.GetSession().GetId() == *rhs.GetSession().GetId());
+                (*lhs.GetSession()->GetId() == *rhs.GetSession()->GetId());
     }
 
 
@@ -232,7 +232,7 @@ namespace model {
     std::ostream& operator << (std::ostream& out, app::Player const& value) {
         return out << "( id " << value.GetId().ToString() << ','
             << " dog_id " << *value.GetDog()->GetId() << ','
-            << " session_id " << *value.GetSession().GetId();
+            << " session_id " << *value.GetSession()->GetId();
     }
 
     std::ostream& operator << (std::ostream& out, app::Players const& value) {

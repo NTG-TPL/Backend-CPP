@@ -31,15 +31,15 @@ public:
             id_(std::move(id)), dog_(std::move(dog)), session_(std::move(session)) {
     }
 
-    [[nodiscard]] const model::GameSession &GetSession() const & noexcept;
+    [[nodiscard]] std::shared_ptr<const model::GameSession> GetSession() const & noexcept;
 
-    model::GameSession &GetSession() & noexcept;
+    std::shared_ptr<model::GameSession> GetSession() & noexcept;
 
-    [[nodiscard]] const std::shared_ptr<model::Dog> &GetDog();
+    [[nodiscard]] std::shared_ptr<model::Dog> GetDog() & noexcept;
+
+    [[nodiscard]] std::shared_ptr<const model::Dog> GetDog() const & noexcept;
 
     void DogMove(std::string_view dir, model::DimensionDouble speed);
-
-    [[nodiscard]] const std::shared_ptr<model::Dog> &GetDog() const noexcept;
 
     [[nodiscard]] Id GetId() const noexcept;
 
@@ -75,7 +75,7 @@ public:
         return *this;
     }
 
-    std::shared_ptr<Player> FindPlayer(const Token& token);
+    std::optional<std::shared_ptr<Player>> FindPlayer(const Token& token);
     void DeleteTokenPlayer(const Token& token);
     Token AddPlayer(std::shared_ptr<Player> player);
     static inline constexpr uint8_t GetTokenLenght() noexcept{ return 32; }
@@ -106,7 +106,7 @@ public:
     using PlayerList = std::unordered_map<Player::Id, std::shared_ptr<Player>, PlayerIdHasher>;
 
     std::pair<Token, Player&> AddPlayer(const model::Dog::Id& id, const std::shared_ptr<model::GameSession>& session);
-    std::shared_ptr<Player> FindByToken(const Token& token);
+    std::optional<std::shared_ptr<Player>> FindByToken(const Token& token);
     void DeleteByToken(const Token& token);
     const PlayerList& GetList() const noexcept;
     const PlayerTokens& GetPlayerTokens() const noexcept;

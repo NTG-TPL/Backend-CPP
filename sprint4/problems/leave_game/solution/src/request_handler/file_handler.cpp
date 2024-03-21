@@ -15,7 +15,7 @@ VariantResponse FileHandler::HandleFileResponse(const StringRequest& req){
     std::filesystem::path file_path = root_path_;
     file_path += decoded_target;
     if(!util::IsSubPath(file_path, root_path_)){
-        return text_response(http::status::method_not_allowed, ErrorResponse::BAD_REQ, ContentType::TEXT_PLAIN);
+        return text_response(http::status::method_not_allowed, ErrorResponse::BAD_REQ(), ContentType::TEXT_PLAIN);
     }
 
     if (!std::filesystem::exists(file_path) ||
@@ -26,7 +26,9 @@ VariantResponse FileHandler::HandleFileResponse(const StringRequest& req){
     http::file_body::value_type file;
 
     if (sys::error_code ec; file.open(file_path.c_str(), beast::file_mode::read, ec), ec) {
-        throw std::logic_error("Failed to open file: " + file_path.string());
+        return text_response(http::status::internal_server_error,
+                             ErrorResponse::SERVER_ERROR("Failed to open file: " + file_path.string()),
+                             ContentType::TEXT_PLAIN);
     }
 
     std::string extension = file_path.extension().string();

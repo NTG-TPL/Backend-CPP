@@ -26,30 +26,28 @@ namespace infrastructure {
         }
 
         void RetrivePlayers() {
-            auto& game = application_.GetGameModel();
             auto& players = application_.GetPlayers();
-            auto retirement_time =  game.GetDogRetirementTime();
-            std::vector<std::pair<app::Token, std::shared_ptr<app::Player>>> to_delete;
+            auto& token_to_player = players.GetPlayerTokens().GetTokenToPlayer();
+            if(players.GetList().empty() || token_to_player.empty()){
+                return;
+            }
+            auto& game = application_.GetGameModel();
+            std::vector<app::Token> to_delete;
             std::vector<data_base::domain::RetiredPlayer> to_save;
-            for (auto& [token, player]: players.GetPlayerTokens().GetTokenToPlayer()) {
+            for (auto& [token, player]: token_to_player) {
                 if(player != nullptr){
                     auto dog = player->GetDog();
-                    if (dog != nullptr && dog->GetStayTime() >= retirement_time) {
-                        to_save.emplace_back(player->GetId(),
-                                             dog->GetName(),
-                                             dog->GetScore(),
-                                             dog->GetLifeTime());
-                        to_delete.emplace_back(token, player);
+                    if (dog != nullptr &&
+                        dog->GetStayTime() >= game.GetDogRetirementTime()) {
+                        to_save.emplace_back(player->GetId(), dog->GetName(),
+                                             dog->GetScore(), dog->GetLifeTime());
+                        to_delete.emplace_back(token);
                     }
                 }
             }
             use_cases_.SaveRetiredPlayers(to_save);
-            for (auto& [token, player] : to_delete) {
-                if(player != nullptr){
-                    auto& sesseion = player->GetSession();
-                    sesseion.DeleteDog(player->GetDog()->GetId());
-                    players.DeleteByToken(token);
-                }
+            for (auto& token : to_delete) {
+                players.DeleteByToken(token);
             }
         }
 

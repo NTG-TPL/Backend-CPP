@@ -62,7 +62,11 @@ void SerializingListener::Load(){
         serialization::ApplicationRepr application_repr;
         input_archive >> application_repr;
         auto application = application_repr.Restore(application_.GetConfigFilePath());
-        application.AddApplicationListener(std::make_shared<infrastructure::SerializingListener>(*this));
+        for (auto& listener: application_.GetApplicationListeners()) {
+            if(listener){
+                application.AddApplicationListener(listener);
+            }
+        }
         application_ = application;
     } catch (const std::system_error& e) {
         server_logging::Logger::LogError(e.code(), "Serialization error "s + e.what());

@@ -13,7 +13,7 @@ namespace serialization {
         explicit PlayerRepr(const app::Player &player) :
                 id_(std::move(player.GetId().ToString())),
                 dog_id_(player.GetDog()->GetId()),
-                session_id_(player.GetSession().GetId()) {
+                session_id_(player.GetSession()->GetId()) {
         }
 
         [[nodiscard]] app::Player::Id GetId() const noexcept {
