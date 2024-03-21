@@ -5,6 +5,15 @@
 #include "../app/players.h"
 
 namespace data_base::domain {
+    using namespace std::string_literals;
+    struct RetiredPlayersKeys {
+        static inline std::string ID                  = "id"s;
+        static inline std::string NAME                = "name"s;
+        static inline std::string SCORE               = "score"s;
+        static inline std::string PLAY_TIME           = "play_time_ms"s;
+        static inline std::string RETIRED_PLAYERS     = "retired_players"s;
+        static inline std::string ALL                 = "id, name, score, play_time"s;
+    };
 
     using milliseconds = std::chrono::milliseconds;
     class RetiredPlayer {

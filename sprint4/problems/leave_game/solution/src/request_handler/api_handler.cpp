@@ -235,10 +235,7 @@ StringResponse ApiHandler::RequestToAction(const StringRequest& req) {
                 return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_ACTION, CacheControl::NO_CACHE );
             }
         }
-        // TODO:: заменить на json::serialize(obj)
-        return MakeTextResponse(req, http::status::ok,
-                                json::serialize(json::value{std::to_string(*player->GetDog()->GetId()), json::value_from(*player->GetDog())}),
-                                CacheControl::NO_CACHE);
+        return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
     });
 }
 
@@ -265,12 +262,7 @@ StringResponse ApiHandler::RequestToTick(const StringRequest& req){
     } catch (const std::exception& ex) {
         return MakeTextResponse(req, http::status::internal_server_error, ErrorResponse::SERVER_ERROR("Update error"s + std::string{ex.what()}), CacheControl::NO_CACHE );
     }
-//    auto& players = app_.GetPlayers();
-//    json::object json_dogs;
-//    for (const auto& [id, player]: players.GetList()) {
-//        json_dogs[std::to_string(*player->GetDog()->GetId())] = json::value_from(*player->GetDog());
-//    }
-//    obj[UserKey::PLAYERS] = json_dogs;
+
     return MakeTextResponse(req, http::status::ok, json::serialize(obj), CacheControl::NO_CACHE);
 }
 

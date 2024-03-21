@@ -9,9 +9,9 @@
 namespace data_base {
     class ConnectionPool {
         using PoolType = ConnectionPool;
+    public:
         using ConnectionPtr = std::shared_ptr<pqxx::connection>;
 
-    public:
         class ConnectionWrapper {
         public:
             ConnectionWrapper(std::shared_ptr<pqxx::connection>&& conn, PoolType& pool) noexcept:

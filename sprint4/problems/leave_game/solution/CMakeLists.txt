@@ -101,6 +101,8 @@ set(DATA_BASE
 	src/db/player_repository.cpp
 	src/db/postgres.h
 	src/db/postgres.cpp
+	src/db/connection_pool_factory.h
+	src/db/prepared.h
 )
 
 set(APPLICATION
