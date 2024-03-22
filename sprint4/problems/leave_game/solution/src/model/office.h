@@ -18,7 +18,6 @@ public:
 
 private:
     Id id_;
-    Point2i position_;
     Offset offset_;
 };
 

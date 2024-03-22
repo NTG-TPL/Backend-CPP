@@ -67,15 +67,16 @@ public:
     using TokenToPlayer = std::unordered_map<Token, std::shared_ptr<Player>, TokenHasher>;
 
     PlayerTokens() = default;
-    PlayerTokens(const PlayerTokens& other) {
+    PlayerTokens(const PlayerTokens& other){
         token_to_player_ = other.token_to_player_;
     }
+
     PlayerTokens& operator=(const PlayerTokens& other) {
         token_to_player_ = other.token_to_player_;
         return *this;
     }
 
-    std::optional<std::shared_ptr<Player>> FindPlayer(const Token& token);
+    std::shared_ptr<Player> FindPlayer(const Token& token);
     void DeleteTokenPlayer(const Token& token);
     Token AddPlayer(std::shared_ptr<Player> player);
     static inline constexpr uint8_t GetTokenLenght() noexcept{ return 32; }
@@ -106,21 +107,12 @@ public:
     using PlayerList = std::unordered_map<Player::Id, std::shared_ptr<Player>, PlayerIdHasher>;
 
     std::pair<Token, Player&> AddPlayer(const model::Dog::Id& id, const std::shared_ptr<model::GameSession>& session);
-    std::optional<std::shared_ptr<Player>> FindByToken(const Token& token);
+    std::shared_ptr<Player> FindByToken(const Token& token);
     void DeleteByToken(const Token& token);
     const PlayerList& GetList() const noexcept;
     const PlayerTokens& GetPlayerTokens() const noexcept;
 
 private:
-    class Hash {
-    public:
-        inline size_t operator()(const std::pair<const model::Dog::Id&, const model::Map::Id&> ids) const{
-            return hasher_(*ids.first) + 37*str_hasher_(*ids.second);
-        }
-    private:
-        std::hash<size_t> hasher_;
-        std::hash<std::string> str_hasher_;
-    };
     PlayerList players_;
     PlayerTokens tokens_;
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <chrono>
+#include <numeric>
 
 #include "geom.h"
 #include "../util/tagged.h"

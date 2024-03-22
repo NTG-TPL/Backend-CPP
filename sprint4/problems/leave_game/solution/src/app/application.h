@@ -29,13 +29,13 @@ public:
     const model::Game::Maps& GetMaps() const noexcept;
     std::shared_ptr<const model::Map> FindMap(const model::Map::Id& id) const noexcept;
     std::pair<Token, Player&> JoinGame(const model::Map::Id& map_id, const std::string &user_name);
-    std::optional<std::shared_ptr<Player>> FindPlayer(const Token &token);
+    std::shared_ptr<Player> FindPlayer(const Token &token);
     const Players& GetPlayers() const & noexcept;
     Players& GetPlayers() & noexcept;
     const model::Game& GetGameModel() const noexcept;
     void Tick(std::chrono::milliseconds tick);
-    void SetRandomSpawm(bool enable) noexcept;
-    bool GetRandomSpawm() const noexcept;
+    void SetRandomSpawn(bool enable) noexcept;
+    bool GetRandomSpawn() const noexcept;
     void SetTickMode(bool enable = false) noexcept;
     bool GetTickMode() const noexcept;
     void AddApplicationListener(std::shared_ptr<ApplicationListener> listener);

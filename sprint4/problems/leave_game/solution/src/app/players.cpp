@@ -54,8 +54,8 @@ Player::Id Player::GetId() const noexcept{
  * @param token Токен игрока
  * @return Указатель на константу Player
  */
-std::optional<std::shared_ptr<Player>> PlayerTokens::FindPlayer(const Token& token) {
-    return token_to_player_.contains(token) ? std::optional{token_to_player_.at(token)} : std::nullopt;
+std::shared_ptr<Player> PlayerTokens::FindPlayer(const Token& token) {
+    return token_to_player_.contains(token) ? token_to_player_.at(token) : nullptr;
 }
 
 /**
@@ -126,7 +126,7 @@ std::pair<Token, Player&> Players::AddPlayer(const model::Dog::Id& id, const std
  * @param map_id индекс карты
  * @return Указатель на игрока
  */
-std::optional<std::shared_ptr<Player>> Players::FindByToken(const Token& token){
+std::shared_ptr<Player> Players::FindByToken(const Token& token){
     return tokens_.FindPlayer(token);
 }
 
@@ -136,13 +136,13 @@ std::optional<std::shared_ptr<Player>> Players::FindByToken(const Token& token){
  */
 void Players::DeleteByToken(const Token& token) {
     auto player = tokens_.FindPlayer(token);
-    if(player.has_value()){
-        auto session = (*player)->GetSession();
-        auto dog = (*player)->GetDog();
+    if(player){
+        auto session = player->GetSession();
+        auto dog = player->GetDog();
         if(session && dog){
             session->DeleteDog(dog->GetId());
         }
-        players_.erase((*player)->GetId());
+        players_.erase(player->GetId());
         tokens_.DeleteTokenPlayer(token);
     }
 }

@@ -93,7 +93,7 @@ int main(int argc, const char* argv[]) {
         }else {
             app.SetTickMode(true);
         }
-        app.SetRandomSpawm(args.randomize_spawn);
+        app.SetRandomSpawn(args.randomize_spawn);
 
         // 3. Добавляем асинхронный обработчик сигналов SIGINT и SIGTERM
         net::signal_set signals(ioc, SIGINT, SIGTERM);

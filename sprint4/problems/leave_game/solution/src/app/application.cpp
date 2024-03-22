@@ -71,7 +71,7 @@ std::pair<Token, Player&> Application::JoinGame(const model::Map::Id& map_id, co
  * @param token токен игрока
  * @return Возвращает указатель на игрока
  */
-std::optional<std::shared_ptr<Player>> Application::FindPlayer(const Token &token) {
+std::shared_ptr<Player> Application::FindPlayer(const Token &token) {
     return players_.FindByToken(token);
 }
 
@@ -101,7 +101,7 @@ const model::Game& Application::GetGameModel() const noexcept {
  */
 void Application::Tick(std::chrono::milliseconds tick){
     game_.Update(tick);
-    for (auto& listener :listeners_) {
+    for (auto& listener: listeners_) {
         if(listener){
             listener->OnTick(tick);
         }
@@ -113,7 +113,7 @@ void Application::Tick(std::chrono::milliseconds tick){
  * @param enable если true, то размещение игроков случайное,
  *  иначе - игроки высаживаются в начале первой дороги.
  */
-void Application::SetRandomSpawm(bool enable) noexcept {
+void Application::SetRandomSpawn(bool enable) noexcept {
     enable_random_spawn = enable;
 }
 
@@ -121,7 +121,7 @@ void Application::SetRandomSpawm(bool enable) noexcept {
  * Получить свойство случайного размещения игроков
  * @return enable_random_spawn
  */
-bool Application::GetRandomSpawm() const noexcept {
+bool Application::GetRandomSpawn() const noexcept {
     return enable_random_spawn;
 }
 

@@ -106,9 +106,9 @@ const Dog::Bag& Dog::GetBag() const noexcept {
  * Очистить сумку с кладом
  */
 void Dog::BagClear() noexcept {
-    for (auto& loot: bag_) {
-        score_ += loot.value;
-    }
+    score_ += std::accumulate(bag_.begin(), bag_.end(), 0, [](std::int32_t lhs, FoundObject& el){
+        return lhs + el.value;
+    });
     bag_.clear();
 }
 

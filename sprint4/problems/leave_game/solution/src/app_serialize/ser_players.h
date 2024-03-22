@@ -46,7 +46,7 @@ namespace serialization {
         PlayersRepr() = default;
 
         explicit PlayersRepr(const app::Players &players) {
-            for (auto &[token, player]: players.GetPlayerTokens().GetTokenToPlayer()) {
+            for (auto &[token, player] : players.GetPlayerTokens().GetTokenToPlayer()) {
                 players_.emplace_back(*token, PlayerRepr(*player));
             }
         }
@@ -69,7 +69,7 @@ namespace serialization {
         }
 
     private:
-        std::deque<std::pair<std::string, PlayerRepr>> players_;
+        std::vector<std::pair<std::string, PlayerRepr>> players_;
     };
 
 } // namespace serialization

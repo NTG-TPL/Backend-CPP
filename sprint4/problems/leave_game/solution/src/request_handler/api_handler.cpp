@@ -130,10 +130,10 @@ StringResponse ApiHandler::ExecuteAuthorized(const StringRequest& req,
                                               const std::function<StringResponse(std::shared_ptr<app::Player>&)>& action) {
     if (auto token = ApiHandler::TryExtractToken(req); token.has_value()) {
         auto player = app_.FindPlayer(*token);
-        if (!player.has_value()) {
+        if (player == nullptr) {
             return MakeTextResponse(req, http::status::unauthorized, ErrorResponse::UNKNOWN_TOKEN, CacheControl::NO_CACHE);
         }
-        return action(*player);
+        return action(player);
     } else {
         return MakeTextResponse(req, http::status::unauthorized, ErrorResponse::INVALID_TOKEN, CacheControl::NO_CACHE);
     }
@@ -154,7 +154,7 @@ StringResponse ApiHandler::RequestToJoin(const StringRequest& req){
         auto obj = boost::json::parse(req.body()).as_object();
         user_name = obj.at(UserKey::USER_NAME).as_string();
         map_id = obj.at(UserKey::MAP_ID).as_string();
-    } catch (...) {
+    } catch (const std:: exception&) {
         return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_JOIN, CacheControl::NO_CACHE);
     }
 
@@ -231,7 +231,7 @@ StringResponse ApiHandler::RequestToAction(const StringRequest& req) {
             try{
                 json::object json_body = json::parse(req.body()).as_object();
                 player->DogMove(json_body.at(UserKey::MOVE).as_string(), map->GetDogSpeed());
-            } catch (...) {
+            } catch (const std:: exception&) {
                 return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_ACTION, CacheControl::NO_CACHE );
             }
         }
@@ -253,7 +253,7 @@ StringResponse ApiHandler::RequestToTick(const StringRequest& req){
     try{
         json::object json_body = json::parse(req.body()).as_object();
         milliseconds = std::chrono::milliseconds(json_body.at(UserKey::TIME_INTERVAL).as_int64());
-    } catch (...) {
+    } catch (const std:: exception&) {
         return MakeTextResponse(req, http::status::bad_request, ErrorResponse::BAD_PARSE_TICK, CacheControl::NO_CACHE );
     }
 
