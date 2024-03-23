@@ -67,8 +67,8 @@ public:
     using TokenToPlayer = std::unordered_map<Token, std::shared_ptr<Player>, TokenHasher>;
 
     PlayerTokens() = default;
-    PlayerTokens(const PlayerTokens& other){
-        token_to_player_ = other.token_to_player_;
+    PlayerTokens(const PlayerTokens& other):
+        token_to_player_(other.token_to_player_){
     }
 
     PlayerTokens& operator=(const PlayerTokens& other) {
